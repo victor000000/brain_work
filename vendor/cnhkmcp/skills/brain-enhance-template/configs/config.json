@@ -1,0 +1,7 @@
+{
+  "brain_email": "",
+  "brain_password": "",
+  "moonshot_base_url": "https://api.moonshot.cn/v1",
+  "moonshot_model": "kimi-k2.6",
+  "moonshot_api_key": ""
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "brain-deepExplore-loop-state",
+  "type": "object",
+  "required": [
+    "day_key",
+    "timezone",
+    "progress_log",
+    "daily_diagnose",
+    "iteration",
+    "artifacts",
+    "sim_summary",
+    "submit_gate",
+    "stop",
+    "loop_units",
+    "history"
+  ],
+  "properties": {
+    "day_key": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "timezone": { "type": "string" },
+    "progress_log": { "type": "string" },
+    "daily_diagnose": {
+      "type": "object",
+      "required": ["done", "objective", "constraints", "done_at"],
+      "properties": {
+        "done": { "type": "boolean" },
+        "objective": { "type": "string" },
+        "constraints": { "type": "string" },
+        "done_at": { "type": "string" }
+      }
+    },
+    "iteration": {
+      "type": "object",
+      "required": ["current", "max", "no_progress_streak", "max_no_progress", "last_branch"],
+      "properties": {
+        "current": { "type": "integer", "minimum": 0 },
+        "max": { "type": "integer", "minimum": 1 },
+        "no_progress_streak": { "type": "integer", "minimum": 0 },
+        "max_no_progress": { "type": "integer", "minimum": 1 },
+        "last_branch": { "type": "string" }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["gem_idea_file", "gem_expression_file", "inspect_input_idea_file", "alpha_list_file", "sim_status_csv", "enhance_outputs"],
+      "properties": {
+        "gem_idea_file": { "type": "string" },
+        "gem_expression_file": { "type": "string" },
+        "inspect_input_idea_file": { "type": "string" },
+        "alpha_list_file": { "type": "string" },
+        "sim_status_csv": { "type": "string" },
+        "enhance_outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "sim_summary": {
+      "type": "object",
+      "required": ["complete", "failed", "running", "updated_at"],
+      "properties": {
+        "complete": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "running": { "type": "integer", "minimum": 0 },
+        "updated_at": { "type": "string" }
+      }
+    },
+    "submit_gate": {
+      "type": "object",
+      "required": ["submit_ready_count", "verified_by_mcp", "alpha_ids_checked", "checked_at"],
+      "properties": {
+        "submit_ready_count": { "type": "integer", "minimum": 0 },
+        "verified_by_mcp": { "type": "boolean" },
+        "alpha_ids_checked": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "checked_at": { "type": "string" }
+      }
+    },
+    "stop": {
+      "type": "object",
+      "required": ["should_stop", "reason"],
+      "properties": {
+        "should_stop": { "type": "boolean" },
+        "reason": { "type": "string" }
+      }
+    },
+    "loop_units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "branch", "passes", "notes"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "branch": { "type": "string" },
+          "passes": { "type": "boolean" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ts", "action", "detail"],
+        "properties": {
+          "ts": { "type": "string" },
+          "action": { "type": "string" },
+          "detail": { "type": "object" }
+        }
+      }
+    }
+  }
+}

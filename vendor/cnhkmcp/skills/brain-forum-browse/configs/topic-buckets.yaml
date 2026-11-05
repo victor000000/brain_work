@@ -1,0 +1,26 @@
+# L2 topic buckets for gap search (search_scarcity scoring)
+buckets:
+  PPAC:
+    tokens: ["PPAC", "Power Pool", "turnover", "maxTrade", "ts_target_tvr"]
+    angle_slugs: ["ppac-turnover-operator", "ppac-submission-debug", "ppac-region-usa"]
+  VF:
+    tokens: ["Value Factor", "VF", "ATOM", "pyramid"]
+    angle_slugs: ["vf-diversity-atom", "theme-official-interpret"]
+  beginner:
+    tokens: ["新手", "第一", "入门", "beginner", "starter"]
+    angle_slugs: ["beginner-first-template"]
+  correlation:
+    tokens: ["self-corr", "self corr", "correlation", "PPAC corr"]
+    angle_slugs: ["ppac-submission-debug"]
+  SuperAlpha:
+    tokens: ["SuperAlpha", "combo", "selection"]
+    angle_slugs: ["theme-official-interpret"]
+  templates:
+    tokens: ["模板", "template", "operator"]
+    angle_slugs: ["beginner-first-template", "dataset-field-audit"]
+  region:
+    tokens: ["USA", "EUR", "GLB", "IND", "CHN"]
+    angle_slugs: ["ppac-region-usa"]
+  dataset:
+    tokens: ["analyst", "fundamental", "model", "sentiment"]
+    angle_slugs: ["dataset-field-audit"]

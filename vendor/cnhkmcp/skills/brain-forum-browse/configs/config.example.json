@@ -1,0 +1,30 @@
+{
+  "default_topic_id": 12913416465431,
+  "write_locale": "zh-CN",
+  "mcp_only": true,
+  "require_mcp_for_forum": true,
+  "default_run_mode": "explore",
+  "_comment_default_run_mode": "explore = stroll-with-mandatory-contribution; single E1 write may auto-send per auto_send_e1",
+  "consent_mode": "upfront_batch",
+  "auto_send_e1": {
+    "enabled": true,
+    "max_writes": 1,
+    "require_get_user_alphas_this_run": true
+  },
+  "require_per_item_confirm": false,
+  "mcp_server": "user-brain-api",
+  "mcp_tool_prefix": "mcp_brain-api_",
+  "quotas": {
+    "search_specific_forum_fast": 30,
+    "search_all_forum_slow": 5,
+    "list_forum_posts_in_topic": 3,
+    "list_help_center_articles": 2,
+    "get_help_center_article": 5,
+    "read_forum_post": 8,
+    "create_forum_comment": 3,
+    "create_forum_post": 1,
+    "upvote_forum_comment": 3
+  },
+  "gap_threshold": 0.45,
+  "glossary_anchor_post_id": "4902349883927"
+}

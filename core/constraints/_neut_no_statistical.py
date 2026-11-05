@@ -1,0 +1,55 @@
+"""Regions whose OPTIONS /simulations omits STATISTICAL neutralization."""
+
+# These regions accept a 10-value subset (no STATISTICAL).
+NEUT_NO_STATISTICAL = {
+    "CHN": {
+        "CROWDING",
+        "FAST",
+        "INDUSTRY",
+        "MARKET",
+        "NONE",
+        "REVERSION_AND_MOMENTUM",
+        "SECTOR",
+        "SLOW",
+        "SLOW_AND_FAST",
+        "SUBINDUSTRY",
+    },
+    "HKG": {
+        "CROWDING",
+        "FAST",
+        "INDUSTRY",
+        "MARKET",
+        "NONE",
+        "REVERSION_AND_MOMENTUM",
+        "SECTOR",
+        "SLOW",
+        "SLOW_AND_FAST",
+        "SUBINDUSTRY",
+    },
+    "IND": {
+        "CROWDING",
+        "FAST",
+        "INDUSTRY",
+        "MARKET",
+        "NONE",
+        "REVERSION_AND_MOMENTUM",
+        "SECTOR",
+        "SLOW",
+        "SLOW_AND_FAST",
+        "SUBINDUSTRY",
+    },
+    "KOR": {
+        "CROWDING",
+        "FAST",
+        "INDUSTRY",
+        "MARKET",
+        "NONE",
+        "REVERSION_AND_MOMENTUM",
+        "SECTOR",
+        "SLOW",
+        "SLOW_AND_FAST",
+        "SUBINDUSTRY",
+    },
+    # MEA has the smallest set: no SLOW/FAST/CROWDING/REVERSION/STATISTICAL.
+    "MEA": {"COUNTRY", "INDUSTRY", "MARKET", "NONE", "SECTOR", "SUBINDUSTRY"},
+}

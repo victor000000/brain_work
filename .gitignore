@@ -1,0 +1,64 @@
+# Database
+*.duckdb
+*.duckdb.wal
+*.duckdb.bak-*
+# Obsolete database formats must not enter source control.
+*.db
+*.db-wal
+*.db-shm
+*.db.bak-*
+
+# Logs — written inside the project, never committed
+brain_logs/
+*.log
+
+# Raw forum dumps — large and regenerable via tools/spider_forum.py.
+# Derived artifacts (forum_templates.json, cnhkmcp_curated_templates.json)
+# stay tracked; these are the 130 MB of HTML bodies and comment JSON.
+docs/forum/forum_bodies.json
+docs/forum/forum_comments.json
+
+# Slots coordination
+.slots
+
+# Credentials
+.brain_credentials
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.ruff_cache/
+.mypy_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+
+# Output
+*_stdout.log
+nohup.out
+
+# OS — ._* are macOS AppleDouble resource forks, never real content
+.DS_Store
+._*
+
+# Rust build artifacts from the vendored fastplus crate
+vendor/fastplus/target/
+
+# Publication snapshot: private credentials and runtime artifacts
+.env
+.env.*
+!.env.example
+*credentials*.json
+.brain_credentials
+*.pem
+*.key
+.pytest_cache/
+backups/
+docs/status/
+docs/forum/
+docs/research/

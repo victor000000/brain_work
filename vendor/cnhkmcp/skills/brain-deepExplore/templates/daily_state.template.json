@@ -1,0 +1,44 @@
+{
+  "day_key": "YYYY-MM-DD",
+  "timezone": "America/New_York",
+  "progress_log": "outputs/progress.txt",
+  "daily_diagnose": {
+    "done": false,
+    "objective": "",
+    "constraints": "",
+    "done_at": ""
+  },
+  "iteration": {
+    "current": 0,
+    "max": 12,
+    "no_progress_streak": 0,
+    "max_no_progress": 3,
+    "last_branch": ""
+  },
+  "artifacts": {
+    "gem_idea_file": "",
+    "gem_expression_file": "",
+    "inspect_input_idea_file": "",
+    "alpha_list_file": "",
+    "sim_status_csv": "",
+    "enhance_outputs": []
+  },
+  "sim_summary": {
+    "complete": 0,
+    "failed": 0,
+    "running": 0,
+    "updated_at": ""
+  },
+  "submit_gate": {
+    "submit_ready_count": 0,
+    "verified_by_mcp": false,
+    "alpha_ids_checked": [],
+    "checked_at": ""
+  },
+  "stop": {
+    "should_stop": false,
+    "reason": ""
+  },
+  "loop_units": [],
+  "history": []
+}

@@ -1,0 +1,14 @@
+# Local secrets
+config.json
+
+# Snapshots / outputs
+sim_options_snapshot.json
+processed_templates/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Logs
+*.log

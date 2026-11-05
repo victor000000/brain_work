@@ -1,0 +1,105 @@
+[project]
+name = "brain-alpha-generator"
+version = "1.0.0"
+description = "WorldQuant BRAIN alpha generation, simulation, and submission engine"
+requires-python = ">=3.12"
+# Keep in sync with requirements.txt. py-fastplus is the Fast Expression
+# parser; `make fastplus` rebuilds it from vendor/fastplus.
+dependencies = [
+    "requests>=2.28.0",
+    "py-fastplus>=0.3.5",
+    "duckdb==1.5.6",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--tb=short"
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    "download/*",           # download utilities (need live API)
+    "simulate_*.py",        # entry points
+    "check_*.py",
+    "debug_*.py",
+    "healthcheck.py",
+    "core/auth.py",         # needs live API auth
+    "core/api.py",          # needs live API
+    "core/api_retry.py",    # needs live API
+    "runner/explore_loop.py",   # main loop (integration)
+    "runner/poll_batch.py",     # needs live API
+    "runner/poll_children.py",  # needs live API
+    "runner/submit_batch.py",   # needs live API
+    "runner/submit.py",         # needs live API
+    "runner/verify_submit.py",  # needs live API
+    "runner/server_slots.py",   # needs live API
+    "runner/slot_manager.py",   # file-lock based
+    "checker/*",                # needs live API
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+fail_under = 60
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = false
+warn_unused_ignores = true
+no_strict_optional = true
+explicit_package_bases = true
+# Disable noisy checks for this project style
+disable_error_code = ["var-annotated", "union-attr", "attr-defined"]
+
+[tool.bandit]
+skips = ["B311", "B608", "B404", "B603", "B607"]  # B311: random OK; B608: SQL constants; B4xx/B6xx: subprocess in healthcheck
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+# Vendored third-party source (MIT, see vendor/README.md) is not ours to lint.
+exclude = ["vendor"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B904",   # raise from within except
+    "SIM108", # ternary instead of if-else (readability)
+    "RUF012", # mutable class variable
+    "UP015",  # redundant open mode
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts need sys.stdout.reconfigure() (and tools/ theirs) before imports
+"simulate_alphas.py" = ["E402"]
+"check_alphas.py" = ["E402"]
+"check_alphas_retry.py" = ["E402"]
+"reconcile_submissions.py" = ["E402"]
+"debug_generator.py" = ["E402"]
+"download/brain_data.py" = ["E402"]
+# tools/ scripts put PROJECT_DIR on sys.path before importing project modules
+"tools/refresh_pv_option_fields.py" = ["E402"]
+"tools/spider_forum.py" = ["E402"]
+"tools/crawl_forum.py" = ["E402"]
+"tools/mine_template_thoughts.py" = ["E402"]
+"tools/mine_forum_templates.py" = ["E402"]
+"tools/repair_group_field_types.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "generator", "runner", "storage", "checker", "download"]
+
+[tool.ruff.format]
+quote-style = "double"

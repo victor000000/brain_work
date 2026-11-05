@@ -1,0 +1,5 @@
+outputs/workspace/
+outputs/runs/
+data/agent_profile.json
+__pycache__/
+*.pyc
