@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import hashlib
 import json
 import re
@@ -24,14 +25,11 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from brain_gmail_connector import CodexGmail  # noqa: E402
+from brain_gmail_connector import CodexGmail
 
 ARCHIVE = Path(__file__).resolve().parents[1] / "docs" / "forum" / "brain_email_ideas_20261021"
 MESSAGES = ARCHIVE / "messages"
-BASE_QUERY = (
-    '{from:worldquantbrain.com from:worldquant.com '
-    'from:worldquantbrain.zendesk.com "WorldQuant BRAIN"}'
-)
+BASE_QUERY = '{from:worldquantbrain.com from:worldquant.com from:worldquantbrain.zendesk.com "WorldQuant BRAIN"}'
 COMBINED_QUERY = "{in:inbox in:spam} " + BASE_QUERY
 FOLDER_QUERIES = {"inbox": "in:inbox " + BASE_QUERY, "spam": "in:spam " + BASE_QUERY}
 MAX_PAGES = 50
@@ -39,17 +37,81 @@ PAGE_SIZE = 100
 DEFAULT_MAX_NEW = 80
 
 CATEGORY_RULES: list[tuple[str, tuple[str, ...]]] = [
-    ("options", ("option", "期权", "implied volatility", "隐含波动率", "open interest", "持仓量", "strike", "行权价", "call-put", "看涨期权", "看跌期权")),
-    ("shortinterest", ("short interest", "shortinterest", "securities lending", "借券", "融券", "borrow fee", "卖空比例", "空头持仓")),
+    (
+        "options",
+        (
+            "option",
+            "期权",
+            "implied volatility",
+            "隐含波动率",
+            "open interest",
+            "持仓量",
+            "strike",
+            "行权价",
+            "call-put",
+            "看涨期权",
+            "看跌期权",
+        ),
+    ),
+    (
+        "shortinterest",
+        ("short interest", "shortinterest", "securities lending", "借券", "融券", "borrow fee", "卖空比例", "空头持仓"),
+    ),
     ("insiders", ("insider", "内部人", "insider trading", "内幕交易")),
     ("institutions", ("13f", "机构持股", "institutional ownership", "institution ownership")),
     ("earnings", ("earnings", "财报", "eps", "guidance", "财季", "业绩预告")),
-    ("fundamental", ("revenue", "营收", "book value", "账面价值", "fcf", "自由现金流", "valuation", "估值", "pe ratio", "市盈率", "total assets", "总资产")),
+    (
+        "fundamental",
+        (
+            "revenue",
+            "营收",
+            "book value",
+            "账面价值",
+            "fcf",
+            "自由现金流",
+            "valuation",
+            "估值",
+            "pe ratio",
+            "市盈率",
+            "total assets",
+            "总资产",
+        ),
+    ),
     ("sentiment", ("sentiment", "情绪", "语调", "news sentiment", "舆情")),
     ("news", ("news", "新闻", "headline", "头条", "事件驱动")),
     ("risk", ("risk model", "风险模型", "covariance", "协方差", "volatility", "波动率", "drawdown", "回撤")),
-    ("model", ("machine learning", "机器学习", "prediction", "预测模型", "cnn", "transformer", "neural network", "神经网络", "model score", "模型评分")),
-    ("pv", ("price", "价格", "volume", "成交量", "turnover", "换手率", "reversal", "反转", "momentum", "动量", "ohlcv", "vwap")),
+    (
+        "model",
+        (
+            "machine learning",
+            "机器学习",
+            "prediction",
+            "预测模型",
+            "cnn",
+            "transformer",
+            "neural network",
+            "神经网络",
+            "model score",
+            "模型评分",
+        ),
+    ),
+    (
+        "pv",
+        (
+            "price",
+            "价格",
+            "volume",
+            "成交量",
+            "turnover",
+            "换手率",
+            "reversal",
+            "反转",
+            "momentum",
+            "动量",
+            "ohlcv",
+            "vwap",
+        ),
+    ),
     ("mixed_paper_hypotheses", ("arxiv", "literature", "文献", "论文")),
 ]
 METHODOLOGY_SUBJECT_TAGS = (
@@ -105,12 +167,8 @@ UNSUB_URL_RE = re.compile(
     re.I,
 )
 UNSUB_MAILTO_RE = re.compile(r"mailto:[^\s<>\"']*(?:unsubscribe|opt[-_]?out)[^\s<>\"']*", re.I)
-FORUM_TEXT_RE = re.compile(
-    r"View the post\s*\((https://support\.worldquantbrain\.com/[^\s)]+)\)", re.I
-)
-FORUM_HTML_RE = re.compile(
-    r'href=[\"\'](https://support\.worldquantbrain\.com/hc/[^\"\']*/posts/[^\"\']+)[\"\']', re.I
-)
+FORUM_TEXT_RE = re.compile(r"View the post\s*\((https://support\.worldquantbrain\.com/[^\s)]+)\)", re.I)
+FORUM_HTML_RE = re.compile(r"href=[\"\'](https://support\.worldquantbrain\.com/hc/[^\"\']*/posts/[^\"\']+)[\"\']", re.I)
 POST_ID_RE = re.compile(r"/posts/(\d+)")
 AUTHOR_RE = re.compile(r"\bby\s+([A-Za-z][A-Za-z0-9_.\-]{1,40})\s*(?:\r?\n|$)")
 
@@ -311,7 +369,7 @@ def sanitize_archive() -> int:
     for path in sorted(MESSAGES.glob("*.json")):
         try:
             source = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+        except (OSError, UnicodeError, json.JSONDecodeError):
             continue
         if sanitize_message(source):
             write_json(path, source)
@@ -329,7 +387,7 @@ def prune_today_non_research() -> list[str]:
     for path in sorted(MESSAGES.glob("*.json")):
         try:
             source = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+        except (OSError, UnicodeError, json.JSONDecodeError):
             continue
         if not str(source.get("archived_at_utc") or "").startswith(today):
             continue
@@ -341,10 +399,7 @@ def prune_today_non_research() -> list[str]:
 
 
 def gmail_url(message_id: str) -> str:
-    return (
-        "https://mail.google.com/mail/u/?authuser=victor000000%40gmail.com"
-        f"#all/{message_id}"
-    )
+    return f"https://mail.google.com/mail/u/?authuser=victor000000%40gmail.com#all/{message_id}"
 
 
 def iso_from_internal(value: Any) -> str | None:
@@ -467,9 +522,7 @@ def is_research_candidate(meta: dict[str, Any]) -> tuple[bool, str]:
         "确认",
         "注册",
     )
-    if any(token in lower for token in hard_administrative) and not any(
-        token in lower for token in whitelist
-    ):
+    if any(token in lower for token in hard_administrative) and not any(token in lower for token in whitelist):
         return False, "administrative/non-research marker"
     strong = (
         "Alpha Idea",
@@ -561,13 +614,15 @@ def parse_message(message: dict[str, Any], meta: dict[str, Any]) -> dict[str, An
     }
 
 
-def search_folder(gmail: CodexGmail, folder: str, query: str) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], bool]:
+def search_folder(
+    gmail: CodexGmail, folder: str, query: str
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], bool]:
     messages: dict[str, dict[str, Any]] = {}
     pages: list[dict[str, Any]] = []
-    token = ""
+    page_cursor = ""  # Opaque pagination cursor, not an authentication secret.
     complete = False
     for _ in range(MAX_PAGES):
-        data = gmail.search(query, PAGE_SIZE, token)
+        data = gmail.search(query, PAGE_SIZE, page_cursor)
         emails = data.get("emails") or []
         pages.append({"folder": folder, "count": len(emails), "next_page_token": data.get("next_page_token") or None})
         for email in emails:
@@ -578,8 +633,8 @@ def search_folder(gmail: CodexGmail, folder: str, query: str) -> tuple[dict[str,
             record.update(email)
             record["folders"] = sorted(set(record.get("folders") or []) | {folder})
             messages[message_id] = record
-        token = str(data.get("next_page_token") or "")
-        if not token:
+        page_cursor = str(data.get("next_page_token") or "")
+        if not page_cursor:
             complete = True
             break
     return messages, pages, complete
@@ -606,13 +661,15 @@ def existing_messages() -> dict[str, dict[str, Any]]:
     for path in sorted(MESSAGES.glob("*.json")):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+        except (OSError, UnicodeError, json.JSONDecodeError):
             continue
         result[str(data.get("id") or path.stem)] = data
     return result
 
 
-def save_message(parsed: dict[str, Any], existing_by_post: dict[str, list[str]], existing_by_hash: dict[str, list[str]]) -> bool:
+def save_message(
+    parsed: dict[str, Any], existing_by_post: dict[str, list[str]], existing_by_hash: dict[str, list[str]]
+) -> bool:
     path = MESSAGES / f"{parsed['id']}.json"
     if path.exists():
         return False
@@ -659,17 +716,15 @@ def rebuild(run_meta: dict[str, Any]) -> dict[str, Any]:
         author = old.get("author_as_reported") or source.get("author_as_reported") or extract_author(plain)
         parser = _CodeBlocks()
         if html:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 parser.feed(html)
-            except Exception:
-                pass
         blocks = old.get("html_code_blocks_unvalidated")
         if blocks is None:
             blocks = parser.blocks
         blocks = [scrub_unsubscribe(str(block), False) for block in blocks]
         images = old.get("external_image_urls_uninspected")
         if images is None:
-            images = sorted(set(re.findall(r'<img[^>]+src=[\"\']([^\"\']+)', html)))
+            images = sorted(set(re.findall(r"<img[^>]+src=[\"\']([^\"\']+)", html)))
         digest = article_hash(article)
         source_path = MESSAGES / f"{message_id}.json"
         row = {
@@ -783,8 +838,7 @@ def render_readme(rows: list[dict[str, Any]], checkpoint: dict[str, Any], run_me
         elif row.get("duplicate_of"):
             version_note = f" (duplicate of {row['duplicate_of']})"
         lines.append(
-            f"| {label}{version_note} | {', '.join(row['categories'])} | "
-            f"[Full content]({row['source_file']}) |"
+            f"| {label}{version_note} | {', '.join(row['categories'])} | [Full content]({row['source_file']}) |"
         )
     return "\n".join(lines) + "\n"
 
@@ -837,9 +891,7 @@ def update_discovery(
         "search_complete": complete,
         "metadata_only_unless_message_file_exists": True,
         "messages": messages,
-        "full_messages_archived": sum(
-            1 for item in messages if (MESSAGES / f"{item['id']}.json").exists()
-        ),
+        "full_messages_archived": sum(1 for item in messages if (MESSAGES / f"{item['id']}.json").exists()),
         "metadata_messages_reviewed": len(messages),
         "updated_at_utc": utc_now(),
         "selection_note": existing.get(
@@ -879,9 +931,7 @@ def update_verification(rows: list[dict[str, Any]], run_meta: dict[str, Any]) ->
         "article_characters": sum(len(row["article_text"]) for row in rows),
         "extracted_html_code_blocks": sum(len(row["html_code_blocks_unvalidated"]) for row in rows),
         "source_hashes_match": source_hashes_match,
-        "all_tagged_idea_titles_archived": all(
-            (ARCHIVE / row["source_file"]).exists() for row in rows
-        ),
+        "all_tagged_idea_titles_archived": all((ARCHIVE / row["source_file"]).exists() for row in rows),
         "personal_unsubscribe_urls_removed": not unsubscribe_left,
         "database_access": False,
         "email_mutations": False,
@@ -953,7 +1003,10 @@ def run(max_new: int, dry_run: bool, prune: bool = False) -> dict[str, Any]:
             "started_at_utc": started,
             "finished_at_utc": None,
             "query": COMBINED_QUERY,
-            "folders": {folder: len([1 for meta in all_meta.values() if folder in (meta.get("folders") or [])]) for folder in FOLDER_QUERIES},
+            "folders": {
+                folder: len([1 for meta in all_meta.values() if folder in (meta.get("folders") or [])])
+                for folder in FOLDER_QUERIES
+            },
             "metadata_messages": len(all_meta),
             "already_saved": len(saved_ids & set(all_meta)),
             "unseen_messages": len(unseen_ids),
@@ -1000,10 +1053,8 @@ def run(max_new: int, dry_run: bool, prune: bool = False) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     global ARCHIVE, MESSAGES
-    try:
+    with contextlib.suppress(AttributeError, OSError, ValueError):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-new", type=int, default=DEFAULT_MAX_NEW)
     parser.add_argument("--dry-run", action="store_true")

@@ -17,6 +17,7 @@ Security boundaries:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import queue
@@ -63,7 +64,7 @@ class CodexGmail:
         self._reader: threading.Thread | None = None
 
     # -- lifecycle ---------------------------------------------------------
-    def __enter__(self) -> "CodexGmail":
+    def __enter__(self) -> CodexGmail:
         self.start()
         return self
 
@@ -130,16 +131,16 @@ class CodexGmail:
         try:
             proc.terminate()
             proc.wait(timeout=10)
-        except Exception:
-            try:
+        except (OSError, subprocess.TimeoutExpired):
+            with contextlib.suppress(OSError):
                 proc.kill()
-            except Exception:
-                pass
 
     # -- json-rpc ----------------------------------------------------------
     def _read_loop(self) -> None:
-        assert self.proc is not None and self.proc.stdout is not None
-        for line in self.proc.stdout:
+        proc = self.proc
+        if proc is None or proc.stdout is None:
+            return
+        for line in proc.stdout:
             line = line.strip()
             if not line:
                 continue
@@ -192,14 +193,14 @@ class CodexGmail:
             raise ConnectorError(f"{tool} returned isError: {text[:2000]}")
         return result
 
-    def search(self, query: str, max_results: int = 100, next_page_token: str = "") -> dict[str, Any]:
+    def search(self, query: str, max_results: int = 100, next_page_token: str | None = None) -> dict[str, Any]:
         args: dict[str, Any] = {"query": query, "max_results": max_results}
         if next_page_token:
             args["next_page_token"] = next_page_token
         result = self.call("gmail.search_emails", args)
         return result.get("structuredContent") or {}
 
-    def search_ids(self, query: str, max_results: int = 500, next_page_token: str = "") -> dict[str, Any]:
+    def search_ids(self, query: str, max_results: int = 500, next_page_token: str | None = None) -> dict[str, Any]:
         args: dict[str, Any] = {"query": query, "max_results": max_results}
         if next_page_token:
             args["next_page_token"] = next_page_token

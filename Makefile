@@ -26,16 +26,16 @@ format-check:
 	$(PYTHON) -m ruff format --check .
 
 test:
-	$(PYTHON) -m pytest -v
+	BRAIN_TEST_OFFLINE=1 $(PYTHON) -m pytest --disable-socket -v
 
 cov:
-	$(PYTHON) -m pytest --cov=. --cov-report=term-missing -q
+	BRAIN_TEST_OFFLINE=1 $(PYTHON) -m pytest --disable-socket --cov=. --cov-report=term-missing -q
 
 typecheck:
 	$(PYTHON) -m mypy --ignore-missing-imports core/ generator/ runner/ storage/ checker/ download/ *.py
 
 security:
-	$(PYTHON) -m bandit -r . --exclude ./tests,./vendor -c pyproject.toml -q
+	$(PYTHON) -m bandit -r core/ generator/ runner/ storage/ checker/ download/ tools/ *.py -c pyproject.toml -q
 
 deadcode:
 	$(PYTHON) -m vulture core/ generator/ runner/ storage/ checker/ download/ *.py --min-confidence 80
@@ -63,7 +63,8 @@ profile:
 
 # The host interpreter supplies the native Python library path for PyO3.
 # Environment RUSTFLAGS still takes precedence.
-RUSTFLAGS ?= -L $(shell $(PYTHON) -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+PYTHON_LIBDIR ?= $(shell $(PYTHON) -m tools.python_library)
+RUSTFLAGS ?= -L $(PYTHON_LIBDIR)
 
 check: lint test security  ## Run all quality checks
 
@@ -141,7 +142,7 @@ blacklist-update:
 # sets this itself in the `fastplus` target; a plain cargo invocation must not.
 rust-ci:
 	@command -v cargo >/dev/null 2>&1 || { echo "cargo not found — install from https://rustup.rs (the vendored fastplus crate needs it)"; exit 1; }
-	cd vendor/fastplus && PATH="$$HOME/.cargo/bin:$$PATH" PYO3_PYTHON="$(abspath $(PYTHON))" RUSTFLAGS="$(RUSTFLAGS)" cargo test --locked --quiet
+	cd vendor/fastplus && PATH="$$HOME/.cargo/bin:$$PATH" PYO3_PYTHON="$(abspath $(PYTHON))" RUSTFLAGS="$(RUSTFLAGS)" LD_LIBRARY_PATH="$(PYTHON_LIBDIR):$${LD_LIBRARY_PATH:-}" cargo test --locked --quiet
 
 fastplus:
 	@command -v cargo >/dev/null 2>&1 || { echo "cargo not found — install from https://rustup.rs"; exit 1; }

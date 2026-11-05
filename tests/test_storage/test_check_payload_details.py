@@ -52,7 +52,13 @@ def test_latest_check_payload_replaces_prior_details_without_duplication():
 
 
 def test_complete_check_json_roundtrips_through_parquet(tmp_path):
-    check = {"name": "LOW_ROBUST_UNIVERSE_SHARPE.WITH_RATIO", "result": "FAIL", "ratio": 0.9, "limit": 2.97, "value": 2.93}
+    check = {
+        "name": "LOW_ROBUST_UNIVERSE_SHARPE.WITH_RATIO",
+        "result": "FAIL",
+        "ratio": 0.9,
+        "limit": 2.97,
+        "value": 2.93,
+    }
     c = conn()
     destination = tmp_path / "check_details.parquet"
     try:

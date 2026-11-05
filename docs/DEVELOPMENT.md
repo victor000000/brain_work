@@ -1,5 +1,42 @@
 # Development and validation
 
+## Portable continuous integration
+
+The public repository runs `.github/workflows/ci.yml` on pushes, pull requests
+and manual dispatches. It validates Python 3.12 on Ubuntu 24.04 with read-only
+repository permissions and immutable action references. Dependencies are pinned
+and hashed in `requirements-ci.txt`.
+
+To reproduce the hosted checks without touching the running explorer:
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install --require-hashes -r requirements-ci.txt
+# Install a Rust toolchain and C linker for the native-parser tests.
+make ci
+```
+
+`make test` disables network sockets and sets `BRAIN_TEST_OFFLINE=1`. Its test
+harness rejects raw-driver access to the project's database while permitting
+temporary synthetic databases. Corpus-dependent tests report skips; they are
+not counted as validated integrations. No credentials, API calls, market-data
+downloads, Gmail/Codex session, systemd service or production database are
+required. Dependency installation and Cargo's package download are build setup.
+The two static Python-probe examples are portable fixtures under
+`tests/fixtures/python_probes`, not private research-archive dependencies.
+
+Runtime dependencies and the latest development requirements remain in
+`requirements.txt` and `requirements-dev.txt`. After intentional dependency
+updates, regenerate the CI lock with
+`uv pip compile requirements.txt requirements-dev.txt --generate-hashes -o requirements-ci.txt`
+and run the checks before committing the lock.
+
+Continuous deployment is **not configured**. Service lifecycle commands in the
+Makefile are explicit local administration operations, not a deployment pipeline.
+CI does not start, stop, install or restart services, submit alphas, or provision
+credentials or historical data. Live API and production-corpus integration checks
+remain external validation requiring separate authorization and suitable data.
+
 ## Work boundaries
 
 The BRAIN goal was explicitly resumed on October 23, 2026 (Asia/Shanghai).

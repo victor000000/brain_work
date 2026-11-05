@@ -1,0 +1,54 @@
+name: Offline validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      BRAIN_TEST_OFFLINE: "1"
+      CARGO_BUILD_JOBS: "2"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Install pinned validation dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --require-hashes -r requirements-ci.txt
+          .venv/bin/python -m pip check
+      - name: Set up Rust for the vendored parser
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      - name: Check formatting
+        run: make format-check
+      - name: Lint source
+        run: make lint
+      - name: Check types
+        run: make typecheck
+      - name: Scan first party source security
+        run: make security
+      - name: Check unused code
+        run: make deadcode
+      - name: Run isolated Python tests
+        run: make test
+      - name: Test the vendored native parser
+        run: make rust-ci

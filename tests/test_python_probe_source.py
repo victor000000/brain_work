@@ -20,7 +20,7 @@ def test_scoped_literal_source():
 
 @pytest.mark.parametrize("filename", ["pca_residual_reversal_candidate.py", "pca_no_component_control.py"])
 def test_actual_pca_drafts(filename):
-    source = (Path(__file__).parents[1] / "docs/research" / filename).read_text()
+    source = (Path(__file__).parent / "fixtures/python_probes" / filename).read_text()
     assert validate_python_source(source, {"returns"}) == ("returns",)
 
 

@@ -11,7 +11,9 @@ import atexit
 import os
 import shutil
 import tempfile
+from pathlib import Path
 
+import duckdb
 import pytest
 
 from core.db import OperationalError
@@ -26,6 +28,19 @@ os.environ.setdefault("BRAIN_BUDGET_STATE_PATH", os.path.join(_TMP_DIR, "budget_
 # The template-attribution ledger is the same kind of shared state, appended to
 # on every generated expression; tests must never touch the production one.
 os.environ.setdefault("BRAIN_EXPR_TEMPLATE_PATH", os.path.join(_TMP_DIR, "expr_templates.tsv"))
+
+# The portable test target is offline even on a checkout containing real data.
+# Guard the raw driver too: wrapper-only protection misses direct DuckDB calls.
+if os.environ.get("BRAIN_TEST_OFFLINE") == "1":
+    _raw_duckdb_connect = duckdb.connect
+    _project_database = Path(__file__).resolve().parents[1] / "brain_data.duckdb"
+
+    def _offline_duckdb_connect(database=":memory:", *args, **kwargs):
+        if database is not None and str(database) != ":memory:" and Path(str(database)).resolve() == _project_database:
+            raise RuntimeError("Offline tests cannot open the project database")
+        return _raw_duckdb_connect(database, *args, **kwargs)
+
+    duckdb.connect = _offline_duckdb_connect
 
 
 @pytest.fixture(autouse=True)
@@ -70,6 +85,9 @@ def open_prod_db():
     the explorer is running it holds DuckDB's single-process lock. Both mean
     "this integration test cannot run right now", not "the code is broken".
     """
+    if os.environ.get("BRAIN_TEST_OFFLINE") == "1":
+        pytest.skip("live corpus integration test excluded from offline validation")
+
     from core.db import DB_PATH, get_conn
 
     if not os.path.exists(DB_PATH):
