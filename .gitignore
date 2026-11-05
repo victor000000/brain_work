@@ -23,6 +23,9 @@ docs/forum/forum_comments.json
 
 # Credentials
 .brain_credentials
+.brain_credentials*
+legacy_credentials.json
+.credentials-migration/
 
 # Python
 .venv/

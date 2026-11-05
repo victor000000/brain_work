@@ -1,54 +1,63 @@
-"""Credential loading for BRAIN sessions, from a file or the credentials table.
-
-Split out of `core/auth.py`; the caller passes the project dir and DB path so
-both are read at call time (tests point core.auth at a tmp_path).
-"""
+"""Load BRAIN login credentials exclusively from environment or private files."""
 
 import json
 import logging
 import os
 
-from core.db import connect
 from core.log import get_file_logger
 
 log = logging.getLogger("brain")
 authlog = get_file_logger("auth")
 
 
-def load_credentials(session, project_dir, db_path):
-    """Load credentials onto session.auth from file or DB.
+def _valid_pair(values):
+    return (
+        isinstance(values, (list, tuple))
+        and len(values) == 2
+        and all(isinstance(value, str) and value.strip() for value in values)
+    )
 
-    Returns True when credentials were found, False otherwise (the caller
-    decides whether to exit or raise).
+
+def load_credentials(session, project_dir):
+    """Prefer a complete environment pair, explicit file, then default files.
+
+    Partial environment overrides and invalid explicitly selected files fail
+    closed instead of silently authenticating with another account. Databases
+    are never opened for authentication.
     """
-    for p in [os.path.join(project_dir, ".brain_credentials"), os.path.expanduser("~/.brain_credentials")]:
-        if not os.path.exists(p):
-            continue
-        try:
-            with open(p) as f:
-                creds = json.load(f)
-        except (OSError, ValueError) as err:
-            authlog.error("Failed to read credentials from %s: %s", p, err)
-            continue
-        if not (isinstance(creds, list) and len(creds) == 2 and all(isinstance(c, str) for c in creds)):
-            authlog.error(
-                "Malformed credentials in %s: expected a JSON list of two strings [email, password]",
-                p,
-            )
-            continue
-        session.auth = (creds[0], creds[1])
-        authlog.info("Credentials loaded from %s", p)
+    session.auth = None
+    names = ("BRAIN_EMAIL", "BRAIN_PASSWORD")
+    if any(name in os.environ for name in names):
+        values = [os.environ.get(name) for name in names]
+        if not _valid_pair(values):
+            authlog.error("BRAIN_EMAIL and BRAIN_PASSWORD must both contain nonempty strings")
+            return False
+        session.auth = tuple(values)
+        authlog.info("Credentials loaded from environment")
         return True
-    try:
-        conn = connect(db_path)
-        email_row = conn.execute("SELECT value FROM credentials WHERE key='email'").fetchone()
-        pass_row = conn.execute("SELECT value FROM credentials WHERE key='password'").fetchone()
-        conn.close()
-        if email_row and pass_row:
-            session.auth = (email_row[0], pass_row[0])
-            authlog.info("Credentials loaded from DB")
-            return True
-    except Exception as err:
-        log.error("Failed to load credentials: %s", err)
-    log.error("No credentials found in files or DB")
+
+    selected = os.environ.get("BRAIN_CREDENTIALS_FILE")
+    paths = (
+        [selected]
+        if selected is not None
+        else [
+            os.path.join(project_dir, ".brain_credentials"),
+            os.path.expanduser("~/.brain_credentials"),
+        ]
+    )
+    for path in paths:
+        try:
+            with open(path, encoding="utf-8") as handle:
+                values = json.load(handle)
+        except (OSError, ValueError, TypeError) as error:
+            # Exception messages can contain snippets of invalid secret input.
+            authlog.debug("Credential file unavailable (%s)", type(error).__name__)
+            continue
+        if not _valid_pair(values):
+            authlog.error("Credential file must contain a nonempty JSON [email, password] pair")
+            continue
+        session.auth = tuple(values)
+        authlog.info("Credentials loaded from private file")
+        return True
+    log.error("No usable credentials found in environment or private files")
     return False

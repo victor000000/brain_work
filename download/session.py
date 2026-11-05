@@ -1,6 +1,5 @@
 """Rate-limit-aware BRAIN API session for data download."""
 
-import json
 import logging
 import os
 import sys
@@ -8,13 +7,11 @@ import time
 
 import requests
 
-from core.db import connect
+from core.auth_credentials import load_credentials
 from download.session_throttle import ThrottleMixin
 
 API_BASE = "https://api.worldquantbrain.com"
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(PROJECT_DIR, "brain_data.duckdb")
-CRED_PATHS = [os.path.join(PROJECT_DIR, ".brain_credentials"), os.path.expanduser("~/.brain_credentials")]
 PAGE_SIZE = 50
 
 log = logging.getLogger("dl")
@@ -28,26 +25,9 @@ class BrainSession(ThrottleMixin):
         self._interval = 1.05
 
     def authenticate(self):
-        for p in CRED_PATHS:
-            if os.path.exists(p):
-                with open(p) as f:
-                    self.session.auth = tuple(json.load(f))
-                log.info("Credentials from %s", p)
-                break
-        else:
-            if os.path.exists(DB_PATH):
-                conn = connect(DB_PATH)
-                email_row = conn.execute("SELECT value FROM credentials WHERE key='email'").fetchone()
-                pass_row = conn.execute("SELECT value FROM credentials WHERE key='password'").fetchone()
-                conn.close()
-                if email_row and pass_row:
-                    self.session.auth = (email_row[0], pass_row[0])
-                else:
-                    log.error("No credentials")
-                    sys.exit(1)
-            else:
-                log.error("No credentials file")
-                sys.exit(1)
+        if not load_credentials(self.session, PROJECT_DIR):
+            log.error("No usable file/environment credentials")
+            sys.exit(1)
         resp = self.session.post(f"{API_BASE}/authentication")
         if resp.status_code not in (200, 201):
             log.error("Auth failed: %d", resp.status_code)

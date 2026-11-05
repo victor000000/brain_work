@@ -33,7 +33,20 @@ Region/universe/delay cells live in `core/regions.py`; settings constraints in `
 
 ## Credentials and network
 
-`.brain_credentials` is a gitignored JSON `[email, password]` pair. Never print or commit it. Authentication can fall back to DB credential lookup in legacy paths; read-only observers explicitly require the file to avoid a competing live DB open.
+`.brain_credentials` is a gitignored JSON `[email, password]` pair. Keep it private
+(mode 0600) and never print or commit it. The core API and download clients share
+one loader: a complete `BRAIN_EMAIL`/`BRAIN_PASSWORD` environment pair takes
+precedence, followed by `BRAIN_CREDENTIALS_FILE` when explicitly selected, then
+the project and home `.brain_credentials` files. Partial environment overrides
+and invalid explicitly selected files fail closed. Authentication never opens a
+database or stores login values in one. Existing file-only forum/tutorial
+utilities continue to use private credential files.
+
+Legacy credential tables require the separate
+[backup-first migration](CREDENTIAL_MIGRATION.md). Removing authentication's
+fallback does not by itself remove existing stored rows. The migration acquires
+the supervisor's writer lock before any DuckDB connection and never stops a
+service itself.
 
 Requests sessions use environment/proxy behavior from their implementation. Check actual host networking and `auth.log` when troubleshooting; do not assume a Windows proxy endpoint or port remains valid. Transport/authentication failure is not proof that the password is wrong.
 

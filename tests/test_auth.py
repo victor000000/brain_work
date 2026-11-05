@@ -44,7 +44,7 @@ def _point_credentials_at(monkeypatch, tmp_path, content):
     cred_file = tmp_path / ".brain_credentials"
     cred_file.write_text(content)
     monkeypatch.setattr(auth, "PROJECT_DIR", str(tmp_path))
-    monkeypatch.setattr(auth, "DB_PATH", str(tmp_path / "missing.db"))
+    monkeypatch.setenv("HOME", str(tmp_path))
 
 
 def test_valid_credentials_file_loaded(monkeypatch, tmp_path):

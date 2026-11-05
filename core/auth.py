@@ -21,7 +21,6 @@ from core.auth_http import (  # noqa: F401
 from core.reauth import _install_reauth_hook
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(PROJECT_DIR, "brain_data.duckdb")
 
 REAUTH_COOLDOWN = 30  # min seconds between re-auth attempts
 
@@ -31,13 +30,13 @@ class AuthError(RuntimeError):
 
 
 def _load_credentials(session):
-    """Load credentials onto session.auth from file or DB.
+    """Load credentials onto session.auth from environment or private files.
 
     Returns True when credentials were found, False otherwise (the caller
-    decides whether to exit or raise). PROJECT_DIR/DB_PATH are read here, at
+    decides whether to exit or raise). PROJECT_DIR is read here, at
     call time, so tests can point this module at a tmp_path.
     """
-    return load_credentials(session, PROJECT_DIR, DB_PATH)
+    return load_credentials(session, PROJECT_DIR)
 
 
 def get_session(raise_on_failure=False):
