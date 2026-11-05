@@ -15,10 +15,15 @@ from pathlib import Path
 import duckdb
 
 from core.auth_credentials import _valid_pair
+from core.credential_compaction import CompactionError, compact_if_needed
 
 
 class MigrationError(RuntimeError):
     """A migration precondition failed; never include secret input in messages."""
+
+    def __init__(self, message, *, rollback_path=None):
+        super().__init__(message)
+        self.rollback_path = rollback_path
 
 
 @contextlib.contextmanager
@@ -59,13 +64,13 @@ def _private_json(path):
 
 def _legacy_values(conn):
     exists = conn.execute(
-        "SELECT table_type FROM information_schema.tables WHERE table_schema='main' AND table_name='credentials'"
+        "SELECT table_type FROM information_schema.tables WHERE lower(table_schema)='main' AND lower(table_name)='credentials'"
     ).fetchone()
     if not exists:
         return None
     if exists[0] != "BASE TABLE":
         raise MigrationError("Unsupported legacy credential relation; no values removed")
-    columns = {row[0] for row in conn.execute("DESCRIBE main.credentials").fetchall()}
+    columns = {row[0].lower() for row in conn.execute("DESCRIBE main.credentials").fetchall()}
     if columns != {"key", "value"}:
         raise MigrationError("Unsupported legacy credential schema; no values removed")
     values = {}
@@ -188,3 +193,38 @@ def remove_legacy(database, lock_file, manifest_file, backup_receipt=None, crede
             raise
         conn.execute("CHECKPOINT")
     return {"credential_table_removed": True, "exported_rows": manifest["rows"]}
+
+
+def sanitize_legacy(database, lock_file, manifest_file, backup_receipt=None, credential_file=None):
+    """Check known credential bytes; rebuild stopped DB only when necessary."""
+    database = Path(database).absolute()
+    if database.is_symlink() or database.parent.resolve() != database.parent or not database.is_file():
+        raise MigrationError("Database must be an existing non-symlink path")
+    manifest_file = Path(manifest_file)
+    manifest = _private_json(manifest_file)
+    if str(database) != manifest["database"]:
+        raise MigrationError("Export belongs to another database")
+    values = _verified_export(manifest, manifest_file.parent, backup_receipt)
+    known = [value for value in values.values() if isinstance(value, str) and value]
+    private_login = Path(credential_file or database.parent / ".brain_credentials")
+    if private_login.exists():
+        pair = _private_json(private_login)
+        if not _valid_pair(pair):
+            raise MigrationError("Private login file is invalid")
+        known.extend(pair)
+    environment_pair = [os.environ.get("BRAIN_EMAIL"), os.environ.get("BRAIN_PASSWORD")]
+    if _valid_pair(environment_pair):
+        known.extend(environment_pair)
+    if not known:
+        raise MigrationError("No known project credential values are available for exact-byte verification")
+    with exclusive_writer(lock_file):
+        with duckdb.connect(str(database)) as conn:
+            if _legacy_values(conn) is not None:
+                raise MigrationError("Perform backup-first logical removal before physical sanitization")
+            conn.execute("CHECKPOINT")
+        try:
+            result = compact_if_needed(database, known)
+        except CompactionError as error:
+            raise MigrationError(str(error), rollback_path=error.rollback_path) from None
+    result["migration_complete"] = bool(result["physical_removal_verified"] and not result.get("cleanup_incomplete"))
+    return result

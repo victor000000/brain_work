@@ -26,6 +26,7 @@ docs/forum/forum_comments.json
 .brain_credentials*
 legacy_credentials.json
 .credentials-migration/
+.credential-compaction-*/
 
 # Python
 .venv/

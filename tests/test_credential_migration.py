@@ -5,7 +5,7 @@ import json
 import duckdb
 import pytest
 
-from core.credential_migration import MigrationError, exclusive_writer, export_legacy, remove_legacy
+from core.credential_migration import MigrationError, exclusive_writer, export_legacy, remove_legacy, sanitize_legacy
 
 
 @pytest.fixture
@@ -187,3 +187,90 @@ def test_no_secret_rows_needs_no_credential_upload(tmp_path, empty_table):
     assert export_legacy(database, lock, output, "fixture-folder", "owner@example.test")["rows"] == 0
     assert not (output / "legacy_credentials.json").exists()
     assert remove_legacy(database, lock, output / "migration.json")["credential_table_removed"]
+
+
+def test_legacy_identifier_case_cannot_hide_credentials(tmp_path):
+    database = tmp_path / "mixed-case.duckdb"
+    with duckdb.connect(str(database)) as conn:
+        conn.execute('CREATE TABLE "CrEdEnTiAlS" ("Key" VARCHAR, "Value" VARCHAR)')
+        conn.execute(
+            'INSERT INTO "CrEdEnTiAlS" VALUES (?,?),(?,?)',
+            ["email", "fixture@example.test", "password", "fixture-password"],
+        )
+    case = database, tmp_path / "writer.lock", tmp_path / "export"
+    result, manifest = exported(case)
+    assert result["rows"] == 2
+    remove_legacy(database, case[1], case[2] / "migration.json", receipt(case, manifest))
+    with duckdb.connect(str(database)) as conn:
+        assert not conn.execute(
+            "SELECT 1 FROM information_schema.tables WHERE lower(table_name)='credentials'"
+        ).fetchone()
+
+
+def test_physical_verification_runs_under_the_same_writer_lock(legacy, monkeypatch):
+    import core.credential_migration as migration
+
+    database, lock, output = legacy
+    _, manifest = exported(legacy)
+    path = receipt(legacy, manifest)
+    remove_legacy(database, lock, output / "migration.json", path)
+    observed = []
+
+    def inspect(stopped_database, known):
+        assert stopped_database == database
+        assert "fixture-provider-key" in known
+        assert "fixture-password" in known
+        with pytest.raises(MigrationError), exclusive_writer(lock):
+            pytest.fail("physical verification lost writer ownership")
+        observed.append(True)
+        return {"physical_removal_verified": True, "rebuilt": False, "rollback_path": None}
+
+    monkeypatch.setattr(migration, "compact_if_needed", inspect)
+    assert sanitize_legacy(database, lock, output / "migration.json", path)["migration_complete"]
+    assert observed == [True]
+
+
+def test_physical_phase_cannot_bypass_logical_removal(legacy):
+    database, lock, output = legacy
+    _, manifest = exported(legacy)
+    with pytest.raises(MigrationError, match="logical removal"):
+        sanitize_legacy(database, lock, output / "migration.json", receipt(legacy, manifest))
+
+
+def test_end_to_end_known_credential_bytes_are_removed(legacy):
+    from core.credential_compaction import scan_credential_bytes
+
+    database, lock, output = legacy
+    _, manifest = exported(legacy)
+    path = receipt(legacy, manifest)
+    remove_legacy(database, lock, output / "migration.json", path)
+    with database.open("ab") as handle:
+        handle.write(b"fixture-password".ljust(262144, b"\0"))
+    assert scan_credential_bytes(database, ["fixture-password"])["patterns_found"] == 1
+    result = sanitize_legacy(database, lock, output / "migration.json", path)
+    assert result["migration_complete"] and result["physical_removal_verified"]
+    assert not result.get("rollback_path")
+    assert scan_credential_bytes(database, ["fixture-password", "fixture-provider-key"])["patterns_found"] == 0
+    with duckdb.connect(str(database)) as conn:
+        assert conn.execute("SELECT * FROM business_data").fetchone() == (42,)
+
+
+def test_incomplete_physical_cleanup_is_not_complete(legacy, monkeypatch):
+    import core.credential_migration as migration
+
+    database, lock, output = legacy
+    _, manifest = exported(legacy)
+    path = receipt(legacy, manifest)
+    remove_legacy(database, lock, output / "migration.json", path)
+    monkeypatch.setattr(
+        migration,
+        "compact_if_needed",
+        lambda *args: {
+            "physical_removal_verified": False,
+            "cleanup_incomplete": True,
+            "rollback_path": "private-dirty-path",
+        },
+    )
+    result = sanitize_legacy(database, lock, output / "migration.json", path)
+    assert result["migration_complete"] is False
+    assert result["rollback_path"] == "private-dirty-path"

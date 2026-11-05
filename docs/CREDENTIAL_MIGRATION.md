@@ -78,5 +78,52 @@ forensic erasure of historical pages or external backups.
 
 If the table is absent or empty, no credential file is uploaded and no Drive
 receipt is required. Record that observed result; do not infer it from source.
-After removal, validate file/environment loading without logging the values,
-then let the campaign owner resume the service and reconcile pending handles.
+Logical removal returns `migration_complete: false`: the physical phase is
+required before claiming database credential removal is complete.
+
+## Verify physical removal before restarting
+
+Keep every database user stopped and run the third phase with the same private
+manifest and verified backup receipt:
+
+```bash
+.venv/bin/python -m tools.migrate_credentials sanitize \
+  --database "$PROJECT_DIR/brain_data.duckdb" \
+  --lock-file "$PROJECT_DIR/brain_logs/explorer.lock" \
+  --manifest "$PRIVATE_EXPORT_DIR/migration.json" \
+  --backup-receipt "$PRIVATE_BACKUP_RECEIPT" \
+  --credential-file "$PROJECT_DIR/.brain_credentials"
+```
+
+For a zero-row export, omit `--backup-receipt`. The physical phase combines
+known values from the verified legacy export, current private login file and
+complete login environment pair. It refuses a zero-value scan. Values and
+matching bytes are never printed. Verification covers their exact UTF-8 bytes;
+it does not claim forensic erasure of unallocated filesystem blocks or unknown
+encoded variants.
+
+If known bytes remain, use DuckDB's documented
+[COPY FROM DATABASE rebuild](https://duckdb.org/docs/1.5/operations_manual/footprint_of_duckdb/reclaiming_space)
+into a fresh, private same-filesystem candidate. This is an explicit stopped-DB
+sanitization step, not a routine backup or a byte image of a live database.
+Every business table is read for count and sorted SHA256 row-multiset verification.
+Supported catalog definitions, columns, constraints, indexes, views, macros,
+comments and checkpointed sequence next-state must match. Source sequences are
+never advanced. Custom/complex types or other unsupported objects fail closed.
+
+Allow at least `max(3 × database file size, 64 MiB)` free additional disk space
+for the candidate and verification spill; available space is checked first.
+Runtime includes full source/candidate scans and depends on database size and
+storage. The original stays at its path until the candidate is reopened,
+verified and scanned. Replacement is atomic, with a temporary private hardlink
+to the dirty source for rollback; this hardlink does not duplicate the full file.
+Successful cleanup unlinks it. After that unlink, rollback is only to the
+verified clean database, not the discarded credential-bearing original.
+
+An error preserves/restores the original where possible. Any reported
+`rollback_path` or `cleanup_incomplete` means keep writers stopped and resolve
+that artifact; it is not successful credential removal. Resume only after
+`migration_complete: true`, `physical_removal_verified: true`, and no dirty
+rollback path. Then validate file/environment loading without logging values,
+let the campaign owner restore the prior service state, and reconcile pending
+handles using GET only. Do not start additional research as a migration side effect.
