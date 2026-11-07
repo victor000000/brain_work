@@ -1,5 +1,6 @@
 # Complete Template Catalog
 
+> Historical reference retained from the 2026 source snapshot. Counts, availability, thresholds and economic explanations below are dated observations or source claims, not current platform guarantees. For current admission and verification use [Research](RESEARCH.md); refresh native metadata/verdicts before spending quota. Raw corpora and account evidence are deployment-local and omitted from publication.
 This document catalogs all templates available in the brain_work generator system, including their sources, performance characteristics, and field requirements.
 
 > **Reconciled 2026-10-15.** The tables below were written when the website

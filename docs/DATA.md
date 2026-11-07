@@ -73,6 +73,6 @@ Legacy report helpers may try the live file and then announce a historical backu
 
 ## Timestamps and delivery semantics
 
-Logs use UTC. Stored strings may include UTC suffixes or offsets; `core/time_sql.py` supplies normalization for reports. A calendar-day report is different from an allowance window starting04:00UTC.
+Logs use UTC. Stored strings may include UTC suffixes or offsets; `core/time_sql.py` supplies normalization for reports. A calendar-day report is different from a native allowance window; use observed reset headers rather than a permanent UTC reset hour.
 
-Metadata is keyed by actual dataset/field and region/universe/delay. Preserve units, NaN semantics, publication/availability timestamps and lookback dependencies. The provider contract covers US/mainlandChina PV/options values, not HongKong; see [the current handoff](data_requirements/CURRENT_BRAIN_PV_OPTIONS_REQUIREMENTS.md).
+Metadata is keyed by actual dataset/field and region/universe/delay. Preserve units, NaN semantics, publication/availability timestamps and lookback dependencies. The provider contract covers US/mainlandChina PV/options values, not HongKong; the provider owns that separate private handoff; metadata exports are not delivery of market observations.

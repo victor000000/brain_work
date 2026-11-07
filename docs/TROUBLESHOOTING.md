@@ -5,7 +5,7 @@ Use actual process, receipt and native-response evidence. Do not restart or repl
 | Symptom | Check | Action / boundary |
 |---|---|---|
 | Project Python missing | `.venv/bin/python --version` | Run `make setup-dev`; Docker is not required |
-| Service inactive or failed | `make status`, supervisor log, `journalctl --user -u brain-work-explorer` | Check authorization and failure before starting |
+| Service inactive or failed | `make status`, supervisor log, `journalctl --user -u brain-work-explorer.service` | Check authorization and failure before starting |
 | Old venv points under `/root` | `readlink ~/.venvs/brain_work/bin/python` | Use the new project `.venv`; do not reuse the old container environment |
 | Authentication fails | `auth.log`: missing credentials, rejection, transport or rate limit | Diagnose the actual branch; do not rotate credentials by guess |
 | HTTP429 CONCURRENT | Native body and live account jobs | Let existing runner poll/back off; not daily exhaustion |
@@ -37,3 +37,7 @@ Daily rotation uses UTC dates. Check current timestamps and matching batch/paren
 - Full check JSON is retained for new writes, but old empty `extra` rows remain and latest-per-check replacement is not full event history.
 - Field metadata can be vague, e.g. “Mapping data.” Preserve uncertainty; do not invent a numeric interpretation.
 - Native stage/status and dateSubmitted must be verified separately from local labels.
+
+## Scope and policy failures
+
+A `pv` prefix does not prove price/volume content. Check native field descriptions and dependencies; EPS/EBIT/EBT/assets tokens are blocked by 1.0.1 meaning-first screening. The helper still cannot prove arbitrary provider semantics, partition use or atom compliance. Treat missing expression metadata as an implementation limitation requiring review, not proof of scope validity.

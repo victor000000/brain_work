@@ -11,7 +11,7 @@ The October23 score-index repair and scratch reproduction are recorded in
 `brain_logs/duckdb_invalidation_recovery_20261023.json` and
 `brain_logs/duckdb_art_reproduction_20261023.json`.
 
-Research work and the supervised campaign are authorized again from 2026-10-21 13:51 UTC; the daily email automation remains paused. [Current state](CURRENT_STATE.md) records the allowance window, the reattached receipts and the published plans. Each allowance window still needs its own authorization, and an observation timeout never authorizes a replay.
+Authorization, allowance windows and live state belong to the deployment owner's current private handoff. This source publication neither pauses nor resumes a campaign.
 
 The supervisor and explorer normally run indefinitely. Budget exhaustion makes the loop wait for a reset; it does not terminate the service. A one-window authorization therefore needs an explicit stop before another allowance window.
 
@@ -61,7 +61,7 @@ For a short, authorized restart, record pending handles, test production changes
 
 For a long pause, **do not blindly start the normal supervisor**: startup can generate fresh work while older receipts fall outside the reattach scan. Reconcile old parents and submission owners with GET-only observations in a controlled maintenance context first. The current documented runtime has no audited reconcile-only startup switch; arranging that context is an explicit remaining operational task, not a reason to replay work or start a duplicate writer.
 
-The October 21 authorization was one window. Resuming in a later window requires the user's scope/allowance decision.
+Use the latest actual authorization; a historical window is not a standing restart instruction.
 
 ## Controlled probe plans
 
@@ -106,4 +106,4 @@ Direct validation/`--apply` modes open the DB and require exclusive maintenance 
 
 Use [Data](DATA.md) to distinguish local simulation state, native checks, submission intent and actual ACTIVE/dateSubmitted acceptance. The dated October 21 observers under `brain_logs/` are campaign-specific; inspect their hard-coded window before reuse. Logs may truncate expression display; the stored expression/raw native payload is the full source.
 
-When a one-window campaign genuinely exhausts native quota, reconcile known receipted jobs, retain uncertainty and cap deferrals, save measured outputs, stop before another reset and disable the campaign follow-up. The current user pause takes precedence over completing that window.
+When a one-window campaign genuinely exhausts native quota, reconcile known receipted jobs, retain uncertainty and cap deferrals, save measured outputs, stop before another reset and disable the campaign follow-up. An explicit user pause takes precedence over completing that window.

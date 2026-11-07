@@ -1,0 +1,19 @@
+[Unit]
+Description=BRAIN research explorer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+Environment=PYTHON=@PROJECT_DIR@/.venv/bin/python
+Environment=PYTHONUNBUFFERED=1
+PassEnvironment=BRAIN_TEMPLATE_MIX
+ExecStart=/bin/bash @PROJECT_DIR@/tools/run_explorer_supervised.sh
+Restart=on-failure
+RestartSec=30
+KillMode=control-group
+TimeoutStopSec=90
+
+[Install]
+WantedBy=default.target

@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev install-service progress lint format format-check test cov typecheck security deadcode complexity check ci all health profile sweep start stop status blacklist-update fastplus rust-ci
+.PHONY: docs-check setup setup-dev install-service progress lint format format-check test cov typecheck security deadcode complexity check ci all health profile sweep start stop status blacklist-update fastplus rust-ci
 
 # Keep runtime and quality checks on the same host Python 3.12 environment.
 PYTHON ?= $(CURDIR)/.venv/bin/python
@@ -16,6 +16,9 @@ install-service:
 	systemctl --user daemon-reload
 
 # ── Quality checks ────────────────────────────────────
+docs-check:
+	$(PYTHON) scripts/check_docs.py
+
 lint:
 	$(PYTHON) -m ruff check .
 
@@ -68,7 +71,7 @@ RUSTFLAGS ?= -L $(PYTHON_LIBDIR)
 
 check: lint test security  ## Run all quality checks
 
-ci: format-check lint typecheck security deadcode test rust-ci  ## CI gate — must be green before merging
+ci: docs-check format-check lint typecheck security deadcode test rust-ci  ## CI gate — must be green before merging
 
 all: format lint test security deadcode typecheck complexity rust-ci  ## Full quality suite
 

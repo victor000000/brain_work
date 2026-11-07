@@ -1,5 +1,6 @@
 # Templates mined from the BRAIN community forum
 
+> Historical reference retained from the 2026 source snapshot. Counts, availability, thresholds and economic explanations below are dated observations or source claims, not current platform guarantees. For current admission and verification use [Research](RESEARCH.md); refresh native metadata/verdicts before spending quota. Raw corpora and account evidence are deployment-local and omitted from publication.
 Harvested 2026-10-02 over plain HTTP (no browser) — see `TODO.md` for the
 access method. Verified faithful against a post supplied as ground truth:
 body text, vote counts (55 / 1 / 21) and comment ordering all matched exactly.

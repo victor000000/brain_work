@@ -39,6 +39,8 @@ jobs:
         run: |
           rustup toolchain install stable --profile minimal
           rustup default stable
+      - name: Check documentation links
+        run: make docs-check
       - name: Check formatting
         run: make format-check
       - name: Lint source

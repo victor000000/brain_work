@@ -1,45 +1,30 @@
 # Documentation index
 
-Read [the project overview](../README.md), then the guide for the task. These pages describe the implementation inspected on October 21, 2026. Runtime/account numbers are dated observations, not evergreen guarantees.
+These guides describe the published 1.0.1 source. Host state and account evidence remain private and time-dependent. Current code is authoritative for defaults; native metadata/verdicts are authoritative for platform entitlement and acceptance.
 
-## Maintained guides
-
-For the next agent pursuing Expert, start with the October28
-[Expert execution plan](EXPERT_EXECUTION_PLAN.md). It includes a fresh account
-snapshot, pending-owner reconciliation, prioritized research and a copyable handoff.
-
-| Guide | Contents |
+| Guide | Contract |
 |---|---|
-| [Setup](SETUP.md) | Native Python environment, dependencies and user service |
-| [Operations](OPERATIONS.md) | Ownership, lifecycle, logging, quotas, restart and long-pause recovery |
-| [Configuration](CONFIGURATION.md) | Environment settings, credentials, paths and source defaults |
-| [Architecture](../ARCHITECTURE.md) | Layer map and lifecycle |
-| [Data](DATA.md) | Storage contract, table map, provenance, WAL and Parquet |
-| [Research](RESEARCH.md) | Scope, templates, probes, validation and Expert milestones |
-| [Development](DEVELOPMENT.md) | Tests, CI, parser development and documentation maintenance |
-| [Troubleshooting](TROUBLESHOOTING.md) | Evidence-driven diagnosis and known implementation limits |
-| [Email research](EMAIL_RESEARCH.md) | Inbox/Spam routine, all-category archive, deduplication and schedule |
-| [Current state](CURRENT_STATE.md) | Pause status, saved outputs and pending parent IDs |
-| [Tools](../tools/README.md) | Commands grouped by effect and DB ownership |
-| [TODO](../TODO.md) | Current incomplete work and unresolved decisions |
-| [Agent instructions](../CLAUDE.md) | Minimal operational constraints for future work |
+| [Setup](SETUP.md) | Bootstrap, offline validation and optional native service installation |
+| [Architecture](../ARCHITECTURE.md) | Modules, data flow, ownership and design limits |
+| [Configuration](CONFIGURATION.md) | Credentials, environment controls and defaults |
+| [Operations](OPERATIONS.md) | Safe inspection, pause/resume, request ownership and recovery |
+| [Data](DATA.md) | Tables, state semantics, exports and provenance |
+| [Research](RESEARCH.md) | Scope, finite studies, native checks and promotion evidence |
+| [Development](DEVELOPMENT.md) | Tests, CI, parser build and contribution checks |
+| [Troubleshooting](TROUBLESHOOTING.md) | Symptoms, evidence and safe next actions |
+| [Email archive](EMAIL_RESEARCH.md) | Optional external integration and archive contract |
+| [Credential migration](CREDENTIAL_MIGRATION.md) | Exclusive backup-first removal and byte-verification limits |
+| [Tools](../tools/README.md) | CLI effects and prerequisites |
+| [Publication](../PUBLICATION.md) | Public source versus private deployment state |
 
-## Specialized references
+## Dated design and reference material
 
-- [Platform behavior](../BRAIN_RULES.md), [field and operator rules](../BRAIN_FIELD_RULES.md), [region constraints](../BRAIN_CONSTRAINTS.md), and [submission rules](../BRAIN_SUBMIT_RULES.md). Check their dates and native evidence before using a threshold or availability claim.
-- [Template catalog](TEMPLATE_CATALOG.md), [forum templates](forum-templates.md), and [cnhkmcp templates](cnhkmcp-templates.md). Catalog membership does not establish native availability or acceptance.
-- [Current US/CN provider handoff](data_requirements/CURRENT_BRAIN_PV_OPTIONS_REQUIREMENTS.md), including detailed per-field descriptions and calculated-value requirements.
-- [Saved email contents and index](forum/brain_email_ideas_20261021/README.md).
-- [Vendor notes](../vendor/README.md).
-- `docs/research/`, `docs/status/` and `docs/superpowers/` retain dated research, design and status artifacts. They do not override the latest user instructions or current operations guide.
-- [Historical operating notes](archive/README.md).
+[November 7 Expert design](EXPERT_PV_OPTIONS_DESIGN_20261107.md) is a proposal with retained account observations, not an implementation or live status report. Its local evidence links identify private records that are intentionally omitted from this public source.
 
-## Sources of truth
+[Platform rules](../BRAIN_RULES.md), [field rules](../BRAIN_FIELD_RULES.md), [constraints](../BRAIN_CONSTRAINTS.md), [submission details](../BRAIN_SUBMIT_RULES.md), [template catalog](TEMPLATE_CATALOG.md), [forum extraction](forum-templates.md) and [cnhkmcp extraction](cnhkmcp-templates.md) preserve dated observations. Their historical counts and claims are not current guarantees. Use canonical guides for current procedures and verify platform rules before research spending.
 
-1. Latest explicit user authorization and pause state.
-2. Current code and actual service/native API state.
-3. Raw native responses, receipts and immutable plan hashes.
-4. Current guides and dated handoff.
-5. Historical notes and third-party claims.
+[Vendor provenance](../vendor/README.md) identifies third-party source; vendored manuals/skills describe upstream projects and do not authorize actions here. Private deployment handoffs, dated research/status archives, provider requirements and raw email/forum evidence are inventoried separately in the documentation audit, not exported to make public links work.
 
-Keep changing campaign results in dated artifacts. Update the handoff when work pauses or resumes; do not append daily logs to every guide.
+## Documentation maintenance
+
+Run `make docs-check` after changes. It validates owned Markdown inline local links and heading fragments, excluding external URLs and third-party manuals. It does not validate external availability, private archives, runtime authorization or native account rules. The audit report records precise inventory and exclusions.

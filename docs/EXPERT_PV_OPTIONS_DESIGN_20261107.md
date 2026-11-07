@@ -1,5 +1,7 @@
 # Revised Expert design — November 7, 2026
 
+> Publication note: this dated proposal retains its original account observations and historical evidence references. Private evidence files are omitted; implemented runtime behavior is described in [Research](RESEARCH.md). This proposal is not a live account-status report.
+
 ## Decision and scope
 
 Keep PV/options value inputs and the later user instruction, **atom alphas only**. Each new expression may depend on exactly one distinct numeric measurement field, including dependencies hidden behind variables. Repeated use of that field is allowed. Legitimate GROUP metadata remains partitioning only; no classifier as a numeric signal, second-field blend, risk input or analyst estimate. Validate the meaning of derived provider fields rather than treating a single identifier or `pv` prefix as sufficient compliance.
@@ -24,10 +26,10 @@ This route provisionally needs nine additional admissible acceptances. It assume
 
 ## What the completed work changes
 
-- [Engineering implementation](status/DESIGN_IMPLEMENTATION_20261105.md): scope/check/ownership/quota/reconciliation/reward repairs are reported complete. Verify their active code paths, rather than scheduling the same repair programme again.
+- Engineering implementation (`status/DESIGN_IMPLEMENTATION_20261105.md`, private evidence): scope/check/ownership/quota/reconciliation/reward repairs are reported complete. Verify their active code paths, rather than scheduling the same repair programme again.
 - Three controlled studies failed. AMR decorrelated volume variants remained fitness-short; pure IV exposures lacked quality; EUR weighting reduced performance. Do not repeat them with renamed tags.
-- [Atom programme](status/ATOM_PROGRAMME_20261105.md): sampled volume fitness reached 0.93, reversal production correlation reached 0.9733, and tested price/spread/IV atoms failed qualification. Retain those failures and the exact configurations.
-- [D0 campaign](status/D0_CLOSURE_20261107.md): retain a default no-spend decision for the tested D0 families. High headline Sharpe did not clear recent-period and robust-universe gates. Two USA examples are out of scope, and AMR 2rA7xLrJ is a two-field expression; neither can justify a new compliant atom.
+- Atom programme (`status/ATOM_PROGRAMME_20261105.md`, private evidence): sampled volume fitness reached 0.93, reversal production correlation reached 0.9733, and tested price/spread/IV atoms failed qualification. Retain those failures and the exact configurations.
+- D0 campaign (`status/D0_CLOSURE_20261107.md`, private evidence): retain a default no-spend decision for the tested D0 families. High headline Sharpe did not clear recent-period and robust-universe gates. Two USA examples are out of scope, and AMR 2rA7xLrJ is a two-field expression; neither can justify a new compliant atom.
 
 The reports' claims of a universal atom ceiling or impossible D0 route exceed the finite observations. The breadth audit includes just two transferred examples in some regions. Likewise, three identical date-range results are evidence that those requests did not change the observed metrics; verify accepted/echoed settings and result identity before concluding why. These limitations do not justify rerunning the failed trials. Reopen only on a documented new mechanism, corrected implementation or changed native capability.
 

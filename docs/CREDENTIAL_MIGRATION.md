@@ -16,6 +16,8 @@ The migration takes the same `brain_logs/explorer.lock` flock as the supervisor.
 If the writer still owns it, export and removal fail before opening DuckDB.
 Do not bypass this guard, copy a live database, or create a second writer.
 
+The examples require the owner to define the uppercase path/destination variables first; no account identifiers belong in committed scripts. Export opens the database read-only and may refuse a pending WAL that needs recovery. In that case keep exclusive ownership and preserve the WAL: the maintenance owner must arrange supported writer recovery/checkpointing under the same lock before retrying. The export CLI does not perform that lifecycle step or authorize deleting a WAL.
+
 Use absolute paths and a new private output directory outside the repository:
 
 ```bash

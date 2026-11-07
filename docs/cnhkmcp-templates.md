@@ -1,5 +1,6 @@
 # Templates extracted from cnhkmcp 4.3.8
 
+> Historical reference retained from the 2026 source snapshot. Counts, availability, thresholds and economic explanations below are dated observations or source claims, not current platform guarantees. For current admission and verification use [Research](RESEARCH.md); refresh native metadata/verdicts before spending quota. Raw corpora and account evidence are deployment-local and omitted from publication.
 Source: `cnhkmcp/untracked/skills/brain-enhance-template/knowledge/template_final_enhance/`
 (files `sample_prompt.md`, `op总结.md`, `单因子思考逻辑链.md`).
 

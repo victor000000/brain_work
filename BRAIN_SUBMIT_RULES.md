@@ -1,7 +1,7 @@
 # Submission Workflow
 
 ## API Flow
-1. `POST /alphas/{id}/submit` — PRIMARY method
+1. After local selection, scope review and the native preview/correlation path, `POST /alphas/{id}/submit` sends a new request
    - 201: request received (NOT necessarily accepted)
    - 403: rejected, body contains FULL check results
 2. After 201, reconcile the existing request with GET requests only:
@@ -78,10 +78,7 @@ The dated native coverage audit is saved in
 
 ## Local Eligibility Filter
 
-Single source of truth: `runner/submit/eligibility.py`. All three submit
-tools (`tools/check_alphas.py`, `tools/check_alphas_retry.py`,
-`tools/reconcile_submissions.py`) call `eligibility_clause()` to gate
-which `alpha_results` rows are sent to `/submit`.
+Single source of truth: `runner/submit/eligibility.py`. Submission tools use the shared selector. `tools/reconcile_submissions.py` selects transient eligible rows and uses GET observations plus local DB updates; it is not a new-submission CLI.
 
 | Constant          | Value | Mirrors                            |
 |-------------------|-------|------------------------------------|
@@ -102,3 +99,7 @@ Not enforced locally:
   summary metrics.
 - `LOW_COVERAGE` — requires field metadata/native checks rather than the local
   `alpha_results` summary columns.
+
+## Published 1.0.1 scope guard and limitations
+
+The new-request path in runner/submit/flow.py checks readable regular code with core/scope.py before PATCH/POST. An existing submission owner instead follows reconciliation. Name-based semantic checks are not complete metadata or atom-role validation; unavailable/malformed expression payloads currently cause guard abstention. Preview handling in this published tree is not identical to later private working-tree experiments. Read [Research](docs/RESEARCH.md) for policy versus implementation and never treat missing verdicts as permission.

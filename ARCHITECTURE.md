@@ -1,6 +1,6 @@
 # Architecture
 
-The engine turns scoped research ideas into native simulations and verifies submission outcomes. The current service is paused; [the handoff](docs/CURRENT_STATE.md) takes precedence over lifecycle examples.
+The engine turns scoped research ideas into native simulations and verifies submission outcomes. Live service and authorization state are deployment-local; consult the private owner handoff before lifecycle actions.
 
 ## Execution flow
 
@@ -64,3 +64,7 @@ Quarterly pyramid targets are refreshed through the existing writer and filtered
 - Verified alpha acceptance is separate from actual published combined OS metrics and Expert promotion.
 
 See [Data](docs/DATA.md) for persistence contracts, [Research](docs/RESEARCH.md) for validation, and [Operations](docs/OPERATIONS.md) for safe recovery.
+
+## Design limits
+
+Scope screening is a name-based helper, not complete field-semantic or atom dependency analysis. The submission collector can abstain on unreadable payloads. Native APIs remain the final authority; retries, local parser success and supervisor restarts do not establish remote termination. Credentials load only from environment/private files; the offline suite blocks production DB access and network sockets. No broker/order execution or automatic deployment is implemented by this research pipeline.

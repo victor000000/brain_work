@@ -1,5 +1,6 @@
 # Platform Constraints (from API OPTIONS + error logs)
 
+> Historical reference retained from the 2026 source snapshot. Counts, availability, thresholds and economic explanations below are dated observations or source claims, not current platform guarantees. For current admission and verification use [Research](docs/RESEARCH.md); refresh native metadata/verdicts before spending quota. Raw corpora and account evidence are deployment-local and omitted from publication.
 ## Region-Specific Neutralization
 STATISTICAL NOT available: CHN, HKG, IND, KOR
 

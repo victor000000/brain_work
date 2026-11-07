@@ -1,5 +1,6 @@
 # Data Field & Expression Rules
 
+> Historical reference retained from the 2026 source snapshot. Counts, availability, thresholds and economic explanations below are dated observations or source claims, not current platform guarantees. For current admission and verification use [Research](docs/RESEARCH.md); refresh native metadata/verdicts before spending quota. Raw corpora and account evidence are deployment-local and omitted from publication.
 ## Field Types & Operator Compatibility
 Counts below are for the **current pv/option-only database** (post-prune,
 2026-10-02). The pre-prune pool was ~5× larger across all categories.

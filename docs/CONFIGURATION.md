@@ -56,11 +56,6 @@ Community cookies and personal unsubscribe links are credentials/capabilities. K
 
 A seed alone is insufficient. Save literal expression, template/source hash, exact cell, every setting/flag, native date ranges, plan/probe IDs, API response and final check stage. Data/coverage/operator availability can change between runs.
 
-## Paused configuration
+## Deployment-local integrations
 
-Both app automation IDs are retained but paused:
-
-- `resume-brain-goal-at-12-01`: campaign supervision.
-- `save-brain-email-ideas-daily`: 11:00 Asia/Shanghai, Inbox + Spam, all research categories.
-
-App automations are configured through the app tools, not cron files in this repository. Configuration persistence is not authorization to resume work.
+App automation status/schedules are not repository configuration. The optional email archive is described in [Email research](EMAIL_RESEARCH.md). Query the owning app/deployment for current state; configuration persistence is not authorization to resume work.

@@ -1,5 +1,6 @@
 # BRAIN Platform Rules — Quick Reference
 
+> Historical reference retained from the 2026 source snapshot. Counts, availability, thresholds and economic explanations below are dated observations or source claims, not current platform guarantees. For current admission and verification use [Research](docs/RESEARCH.md); refresh native metadata/verdicts before spending quota. Raw corpora and account evidence are deployment-local and omitted from publication.
 ## Rate Limits
 - Daily simulations: 5,000 (resets EST midnight)
 - Concurrent: 8 parent sims max
