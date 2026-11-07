@@ -20,6 +20,7 @@ jobs:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       BRAIN_TEST_OFFLINE: "1"
       CARGO_BUILD_JOBS: "2"
+      PYTEST_ADDOPTS: "--junitxml=test-results.xml"
     steps:
       - name: Check out source
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5

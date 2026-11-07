@@ -11,6 +11,7 @@ import time  # noqa: F401 - tests patch flow.time to freeze the cooldown clock
 
 from checker.auto_check_deferrals import _note_deferral
 from core.log import get_file_logger
+from core.scope import dispatch_block_reason, validate_expression
 from runner.submit.held import DRAIN_PER_PASS, drain_held_queue  # noqa: F401
 from runner.submit.outcome import update_alpha_status
 from runner.submit.throttle import (  # noqa: F401
@@ -115,6 +116,35 @@ def _do_check_and_submit(session, conn, alpha_id):
     return fallback_get_check(session, conn, alpha_id, status_code)
 
 
+API_BASE = "https://api.worldquantbrain.com"
+
+
+def _scope_verdict(session, alpha_id):
+    """Resolve this alpha's expression and validate its numeric leaves.
+
+    Returns the `core.scope.validate_expression` verdict, or None when the
+    expression cannot be read (in which case the guard abstains rather than
+    inventing a failure).
+    """
+    try:
+        resp = session.get(f"{API_BASE}/alphas/{alpha_id}", timeout=60)
+        payload = resp.json()
+    except Exception as e:
+        clog.debug("scope guard could not read %s: %s", alpha_id, e)
+        return None
+    # Type-strict: a test double or an unexpected payload must make the guard
+    # ABSTAIN, never fabricate a verdict out of a mock repr.
+    if not isinstance(payload, dict):
+        return None
+    regular = payload.get("regular")
+    if not isinstance(regular, dict):
+        return None
+    code = regular.get("code")
+    if not isinstance(code, str) or not code.strip():
+        return None
+    return validate_expression(code)
+
+
 def check_and_submit(session, conn, alpha_id):
     """Full flow: description -> submit -> verify. Updates alpha_results.status."""
     row = conn.execute("SELECT status FROM alpha_results WHERE alpha_id=?", (alpha_id,)).fetchone()
@@ -122,6 +152,26 @@ def check_and_submit(session, conn, alpha_id):
         # Terminal: never re-POST an already-submitted alpha.
         clog.info("check_and_submit skip: %s already SUBMITTED", alpha_id)
         return "SUBMITTED"
+
+    # Design 2026-11-05 (P0-1): semantic input validation before submission.
+    # A risk/model/partition leaf, or an unresolvable one, must never reach the
+    # POST. The refusal is recorded as a visible check row (and a summary, so
+    # the selector stops re-picking it) rather than deleting or hiding anything.
+    #
+    # An alpha already carrying a submission request is in an UNCERTAIN state:
+    # the only correct action there is reconciliation, and re-reading the
+    # expression would add a network round trip without changing the decision.
+    owned = False
+    try:
+        owned = conn.execute("SELECT COUNT(*) FROM submission_requests WHERE alpha_id=?", (alpha_id,)).fetchone()[0] > 0
+    except Exception:
+        owned = False
+    verdict = None if owned else _scope_verdict(session, alpha_id)
+    reason = dispatch_block_reason(verdict) if verdict else None
+    if reason:
+        clog.warning("scope-blocked %s: %s", alpha_id, reason)
+        store_checks(conn, alpha_id, [{"name": "SCOPE_COMPLIANCE", "result": "FAIL", "value": None, "limit": None}])
+        return "SCOPE_BLOCKED"
 
     result = _do_check_and_submit(session, conn, alpha_id)
     update_alpha_status(conn, alpha_id, result)
