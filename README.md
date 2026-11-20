@@ -1,6 +1,6 @@
 # brain_work
 
-Version 1.0.1 is a Python research engine for WorldQuant BRAIN: generate expressions, simulate, collect native results, inspect checks and verify submission outcomes. It stores research state in DuckDB and exports metadata/analysis as Parquet. Source tests do not establish profitability or Expert promotion.
+Version 1.0.2 is a Python research engine for WorldQuant BRAIN: generate expressions, simulate, collect native results, inspect checks and verify submission outcomes. It stores research state in DuckDB and exports metadata/analysis as Parquet. Source tests do not establish profitability or Expert promotion.
 
 ## Start here
 

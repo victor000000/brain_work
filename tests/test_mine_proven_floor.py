@@ -1,5 +1,7 @@
 """The floor-proven corpus is drawn from alphas, so its miners are pure SQL+text."""
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from core.db import connect
@@ -27,10 +29,12 @@ def make_conn(rows, target=":memory:"):
             for name in ("rank", "ts_mean", "group_neutralize", "winsorize", "trade_when", "ts_regression", "bucket")
         ],
     )
+    # Keep synthetic evidence inside the miner's rolling window on any CI date.
+    created_at = (datetime.now(timezone(timedelta(hours=-4))) - timedelta(days=1)).isoformat(timespec="seconds")
     for i, (region, delay, universe, expr, sharpe) in enumerate(rows):
         conn.execute(
             "INSERT INTO alpha_results VALUES (?,?,?,?,?,?,?)",
-            (f"a{i}", region, delay, universe, expr, sharpe, "2026-10-11T00:00:00-04:00"),
+            (f"a{i}", region, delay, universe, expr, sharpe, created_at),
         )
     conn.commit()
     return conn

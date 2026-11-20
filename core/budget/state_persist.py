@@ -12,6 +12,7 @@ import tempfile
 import time
 
 from core.budget.state_file import (
+    MAX_RESET_WINDOW_SEC,
     MIN_RESET_SECONDS,
     _live_reset_at,
     _read_state_file,
@@ -54,6 +55,7 @@ class PersistenceMixin:
                 "reset_at": reset_at,
                 "last_reset_seconds": last_reset_seconds,
                 "last_remaining": self.last_remaining,
+                "remaining_reset_at": self._remaining_reset_at,
                 "updated_at": now,
             }
         try:
@@ -84,6 +86,13 @@ class PersistenceMixin:
         remaining = data.get("last_remaining")
         if isinstance(remaining, bool) or not isinstance(remaining, int):
             remaining = None
+        recorded_expiry = data.get("remaining_reset_at")
+        remaining_reset_at = None
+        if type(recorded_expiry) in (int, float):
+            if recorded_expiry <= now:
+                remaining = None
+            elif recorded_expiry <= now + MAX_RESET_WINDOW_SEC:
+                remaining_reset_at = recorded_expiry
         if not reset_at and remaining is not None and remaining <= 0:
             # A previous window's zero is not the new day's allowance. This
             # also repairs files written before reset cleared that observation.
@@ -93,6 +102,7 @@ class PersistenceMixin:
             seconds = None
         with self._lock:
             self.last_remaining = remaining
+            self._remaining_reset_at = remaining_reset_at
             if reset_at > now:
                 self._exhausted = True
                 self._reset_at = reset_at

@@ -1,6 +1,6 @@
 # Documentation index
 
-These guides describe the published 1.0.1 source. Host state and account evidence remain private and time-dependent. Current code is authoritative for defaults; native metadata/verdicts are authoritative for platform entitlement and acceptance.
+These guides describe the published 1.0.2 source. Host state and account evidence remain private and time-dependent. Current code is authoritative for defaults; native metadata/verdicts are authoritative for platform entitlement and acceptance.
 
 | Guide | Contract |
 |---|---|

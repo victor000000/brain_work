@@ -42,7 +42,7 @@ def update_from_headers(headers):
     rem_int = _parse_remaining(headers.get("X-Ratelimit-Remaining"))
     if rem_int is None:
         return  # missing or unparseable → unknown, never marks exhaustion
-    get_state().note_remaining(rem_int)
+    get_state().note_remaining(rem_int, headers.get("X-Ratelimit-Reset"))
     if rem_int < BUDGET_FLOOR:
         # The raw header value is handed straight to mark_exhausted, which
         # sanitizes it (non-finite/absurd/unparseable → a short default
@@ -68,7 +68,7 @@ def check_budget(resp):
     if rem_int is None:
         # Missing header → unknown, not exhausted. Non-numeric stays raw.
         return remaining
-    get_state().note_remaining(rem_int)
+    get_state().note_remaining(rem_int, reset_sec)
 
     _maybe_mark_exhausted(rem_int, reset_sec)
 

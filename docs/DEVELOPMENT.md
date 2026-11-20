@@ -23,9 +23,13 @@ CARGO_BUILD_JOBS=2 make ci
 | `make ci` | Docs, format, lint, types, security, dead code, Python and Rust gates |
 | `make all` | Includes mutating format and additional complexity reporting |
 
+## 1.0.2 validation changes
+
+The quota tests use synthetic response headers and a controlled clock to cover in-process and restart behavior. The provenance miner’s fixtures use recent synthetic timestamps so they stay inside the rolling lookback as CI dates advance.
+
 ## Dependency and parser changes
 
-`pyproject.toml` is version 1.0.1 and requires >=3.12; runtime pins live in `requirements.txt`. `make setup-dev` installs the development inputs with uv. After an intentional dependency update regenerate the CI lock with `uv pip compile requirements.txt requirements-dev.txt --generate-hashes -o requirements-ci.txt`, then validate it in a fresh venv and run CI. The lock is not generated during tests.
+`pyproject.toml` is version 1.0.2 and requires >=3.12; runtime pins live in `requirements.txt`. `make setup-dev` installs the development inputs with uv. After an intentional dependency update regenerate the CI lock with `uv pip compile requirements.txt requirements-dev.txt --generate-hashes -o requirements-ci.txt`, then validate it in a fresh venv and run CI. The lock is not generated during tests.
 
 `vendor/fastplus` is the Rust/PyO3 parser source. Runtime normally uses the wheel. Local syntax/type checks cover only operators the parser knows and do not replace native verdicts. FASTEXPR operator counting and probe validation have dedicated tests; Python probes have a separate source-validation path.
 

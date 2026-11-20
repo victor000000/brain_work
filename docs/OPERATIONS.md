@@ -39,7 +39,7 @@ Logs and internal timestamps use UTC. Scheduling instructions may use Asia/Shang
 
 ## Budget and platform limits
 
-`core/budget/` stores last native remaining/reset evidence in `brain_logs/.budget_state.json` by default. Native remaining values can arrive asynchronously; quote the observation time. A local flag or an expected noon reset is not proof of available allowance.
+`core/budget/` stores last native remaining/reset evidence in `brain_logs/.budget_state.json` by default. Native remaining values can arrive asynchronously, so quote the observation time. When a response includes a valid reset interval, the cached remaining count expires at that deadline, including across restarts. Observations without a known reset deadline remain last-seen values. A fresh native response is the authority on the next window’s actual allowance.
 
 A CONCURRENT rejection is not daily exhaustion. Respect Retry-After and let the sole runner manage slots. Submission caps and unresolved correlation checks are separate constraints; retain deferred candidates. Never bypass quota or use POST polling to find a reset.
 

@@ -10,6 +10,7 @@ resolving for callers and tests.
 """
 
 import threading
+import time
 
 from core.budget.state_exhaustion import ExhaustionMixin
 from core.budget.state_file import (  # noqa: F401
@@ -39,6 +40,7 @@ class BudgetState(ExhaustionMixin, PersistenceMixin):
     def __init__(self, persist=False):
         self.last_reset_seconds = 60
         self.last_remaining = None
+        self._remaining_reset_at = None
         self._exhausted = False
         self._reset_at = 0.0
         self._lock = threading.RLock()
@@ -48,28 +50,48 @@ class BudgetState(ExhaustionMixin, PersistenceMixin):
         with self._lock:
             self.last_reset_seconds = 60
             self.last_remaining = None
+            self._remaining_reset_at = None
             self._exhausted = False
             self._reset_at = 0.0
             # An explicit reset is deliberate operator intent: it clears the
             # shared window too, so no merge-back may resurrect it.
             self._persist_state(merge_shared=False)
 
-    def note_remaining(self, remaining):
-        """Record the last-seen X-Ratelimit-Remaining for cross-process visibility."""
+    def note_remaining(self, remaining, reset_seconds=None):
+        """Record the observed allowance and any valid provider reset hint."""
+        try:
+            seconds = float(reset_seconds)
+        except (TypeError, ValueError, OverflowError):
+            seconds = -1
         with self._lock:
-            if remaining == self.last_remaining:
+            now = time.time()
+            reset_at = self._remaining_reset_at
+            if reset_at is not None and reset_at <= now:
+                reset_at = None
+            if 0 <= seconds <= MAX_RESET_WINDOW_SEC:
+                reset_at = now + seconds
+            if remaining == self.last_remaining and reset_at == self._remaining_reset_at:
                 return
             self.last_remaining = remaining
+            self._remaining_reset_at = reset_at
             self._persist_state()
+
+    def current_remaining(self):
+        """Read the allowance for the current window without rewriting shared state."""
+        with self._lock:
+            if self._remaining_reset_at is not None and self._remaining_reset_at <= time.time():
+                return None
+            return self.last_remaining
 
     def submission_capacity(self, maximum):
         """Fit a request to the known allowance; unknown permits a normal batch."""
         with self._lock:
             if self.is_exhausted():
                 return 0
-            if self.last_remaining is None:
+            remaining = self.current_remaining()
+            if remaining is None:
                 return maximum
-            return max(0, min(maximum, self.last_remaining))
+            return max(0, min(maximum, remaining))
 
 
 _state = BudgetState(persist=True)

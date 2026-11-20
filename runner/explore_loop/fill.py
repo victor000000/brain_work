@@ -49,7 +49,7 @@ def fill_slots(session, state, conn, max_concurrent):
     consecutive_fails = state.get("submit_fail_streak", 0) or 0
     session_fails = 0
     while len(state["inflight"]) < max_concurrent:
-        remaining = budget.get_state().last_remaining
+        remaining = budget.get_state().current_remaining()
         tail = remaining is not None and 0 < remaining <= max_concurrent * BATCH_SIZE
         if tail and state["inflight"]:
             # BRAIN's remaining headers can omit other in-flight charges.

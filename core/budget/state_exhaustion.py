@@ -21,6 +21,7 @@ class ExhaustionMixin:
             if self._exhausted and time.time() >= self._reset_at:
                 self._exhausted = False
                 self.last_remaining = None
+                self._remaining_reset_at = None
                 blog.info("Budget reset time reached, clearing exhaustion flag")
                 self._persist_state()
             return self._exhausted

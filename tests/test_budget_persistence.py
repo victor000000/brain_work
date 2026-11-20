@@ -1,6 +1,9 @@
 """Cross-process persistence: exhaustion windows are shared and never clobbered."""
 
-from core.budget import BudgetState
+import time
+from types import SimpleNamespace
+
+from core.budget import BudgetState, check_budget, set_state, update_from_headers
 from tests.test_budget_helpers import isolated_budget_state  # noqa: F401
 
 
@@ -56,3 +59,37 @@ def test_reset_still_clears_a_shared_window(monkeypatch, tmp_path):
     restart = BudgetState(persist=True)
     restart.load_persisted_state()
     assert restart.is_exhausted() is False
+
+
+def test_positive_remaining_expires_at_provider_reset_including_after_restart(monkeypatch, tmp_path):
+    monkeypatch.setenv("BRAIN_BUDGET_STATE_PATH", str(tmp_path / "state.json"))
+    clock = [1000.0]
+    monkeypatch.setattr(time, "time", lambda: clock[0])
+    state = BudgetState(persist=True)
+    set_state(state)
+    update_from_headers({"X-Ratelimit-Remaining": "3", "X-Ratelimit-Reset": "600"})
+
+    clock[0] = 1599.0
+    before = BudgetState(persist=True)
+    before.load_persisted_state()
+    assert before.submission_capacity(10) == 3
+
+    clock[0] = 1600.0
+    after = BudgetState(persist=True)
+    after.load_persisted_state()
+    assert after.submission_capacity(10) == 10
+    assert state.submission_capacity(10) == 10
+
+
+def test_new_header_without_reset_replaces_expired_allowance(monkeypatch):
+    clock = [1000.0]
+    monkeypatch.setattr(time, "time", lambda: clock[0])
+    state = BudgetState()
+    set_state(state)
+    check_budget(SimpleNamespace(headers={"X-Ratelimit-Remaining": "3", "X-Ratelimit-Reset": "60"}))
+
+    clock[0] = 1060.0
+    assert state.submission_capacity(10) == 10
+
+    check_budget(SimpleNamespace(headers={"X-Ratelimit-Remaining": "4"}))
+    assert state.submission_capacity(10) == 4
