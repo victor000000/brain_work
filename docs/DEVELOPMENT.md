@@ -2,41 +2,58 @@
 
 ## Reproduce CI
 
-Use the [Setup](SETUP.md) fresh-checkout commands to install hash-pinned `requirements-ci.txt`. CI runs on Python 3.12 / Ubuntu 24.04 with a stable Rust toolchain, a C linker, immutable checkout/setup action references and read-only repository permissions. Installation/Cargo downloads require network; unit tests do not.
+Install the pinned validation dependencies in a clean Git checkout of the publication source. Ruff uses the checkout’s ignore rules to skip the in-tree virtual environment. For an unpacked archive, keep the environment outside the source directory and pass its interpreter using the Makefile’s `PYTHON` override. Use a shell without deployment overrides for log, budget or ledger paths. For the native parser, make sure `cargo`, `rustc` and `cc` are on `PATH`. Check which Python shared-library directory the build will use.
+
+```bash
+.venv/bin/python -m tools.python_library
+```
+
+Run the same gates as GitHub Actions from the repository root. Set the report path to keep the unit results locally.
+
+```bash
+results_dir=$(mktemp -d)
+PYTEST_ADDOPTS="--junitxml=$results_dir/results.xml" CARGO_BUILD_JOBS=2 make ci
+```
+
+`make ci` runs docs-check, format-check, lint, typecheck, security, deadcode, test and rust-ci. The last target builds the vendored fastplus crate and runs `cargo test --locked`. With all crates cached, set `CARGO_NET_OFFLINE=true` for a disconnected run. Installation prerequisites are in [Setup](SETUP.md).
+
+The **Offline validation** workflow runs on pushes, pull requests and manual dispatches. It installs the lock with pip on Ubuntu 24.04 and CPython 3.12, uses stable Rust, and gives the checkout read-only repository permissions. Pytest writes `test-results.xml` inside the job workspace. The retained Actions log contains the test summary. [Workflow](../.github/workflows/ci.yml)
+
+## Focused checks
 
 ```bash
 make docs-check
-CARGO_BUILD_JOBS=2 make ci
+BRAIN_TEST_OFFLINE=1 .venv/bin/python -m pytest --disable-socket -q \
+  tests/test_docs_links.py tests/test_budget_persistence.py \
+  tests/test_runner_fixes/test_flow_guard.py tests/test_submission_request_reconciliation.py
 ```
 
-`make test` sets `BRAIN_TEST_OFFLINE=1` and invokes pytest with `--disable-socket`. The harness rejects production-DB opens through the raw driver and skips corpus-only checks; temporary synthetic databases remain usable. Fixtures redirect logs, quota and expression-ledger paths. Run this target rather than an unguarded ad hoc whole-suite command. Never start an explorer, authenticate, download data or restart services to exercise a test.
+`make test` and `make cov` set both offline controls. Pytest disables sockets, the test harness rejects a raw DuckDB connection to the checkout's project database, and corpus-dependent tests skip. Temporary synthetic databases are available. Budget and expression-ledger defaults are isolated by the test fixtures. The link checker verifies owned Markdown inline local links and heading fragments. External URLs and vendored manuals fall outside its scope. [Test fixtures](../tests/conftest.py) · [Link checker](../scripts/check_docs.py)
 
 | Target | Effect |
 |---|---|
-| `make docs-check` | Owned local Markdown links/anchors; no DB/network |
-| `make test` | Full offline Python suite; corpus integrations skipped |
-| `make cov` | Same isolation plus coverage report |
-| `make format-check`, `make lint` | Ruff verification |
-| `make format` | Rewrites formatting; inspect diff afterward |
-| `make typecheck`, `make security`, `make deadcode` | mypy, first-party Bandit, Vulture |
-| `make rust-ci` | Vendored fastplus tests; resolves host Python library via tools/python_library.py |
-| `make ci` | Docs, format, lint, types, security, dead code, Python and Rust gates |
-| `make all` | Includes mutating format and additional complexity reporting |
-
-## 1.0.2 validation changes
-
-The quota tests use synthetic response headers and a controlled clock to cover in-process and restart behavior. The provenance miner’s fixtures use recent synthetic timestamps so they stay inside the rolling lookback as CI dates advance.
+| `make format-check`, `make lint` | Verify formatting and lint with Ruff |
+| `make typecheck`, `make security`, `make deadcode` | Run mypy, first-party Bandit and Vulture |
+| `make test`, `make cov` | Full offline Python tests, optionally with coverage |
+| `make rust-ci` | Build the locked native parser and run its tests |
+| `make format`, `make all` | Can rewrite source formatting |
 
 ## Dependency and parser changes
 
-`pyproject.toml` is version 1.0.2 and requires >=3.12; runtime pins live in `requirements.txt`. `make setup-dev` installs the development inputs with uv. After an intentional dependency update regenerate the CI lock with `uv pip compile requirements.txt requirements-dev.txt --generate-hashes -o requirements-ci.txt`, then validate it in a fresh venv and run CI. The lock is not generated during tests.
+Runtime pins are in `requirements.txt`. When deliberately changing dependencies, regenerate the CI lock from the runtime and development inputs, then install it in a fresh environment and run CI.
 
-`vendor/fastplus` is the Rust/PyO3 parser source. Runtime normally uses the wheel. Local syntax/type checks cover only operators the parser knows and do not replace native verdicts. FASTEXPR operator counting and probe validation have dedicated tests; Python probes have a separate source-validation path.
+```bash
+uv pip compile --python .venv/bin/python requirements.txt requirements-dev.txt --generate-hashes -o requirements-ci.txt
+```
 
-## Review and publication
+Runtime uses the py-fastplus wheel. For an optimized build of the vendored Rust library, run the following after setting up the validation environment.
 
-Use synthetic fixtures for ownership, incomplete checks, native payload errors and scope regressions. Preserve unrelated working-tree changes. Inspect the exact staged tree and commit only reviewed source/tests/docs; exclude credentials, DB/WAL, runtime logs and private research snapshots. See [Publication](../PUBLICATION.md).
+```bash
+parser_libdir=$(.venv/bin/python -m tools.python_library)
+PYO3_PYTHON="$PWD/.venv/bin/python" RUSTFLAGS="-L $parser_libdir" CARGO_BUILD_JOBS=2 \
+  cargo build --locked --release --manifest-path vendor/fastplus/Cargo.toml
+```
 
-GitHub runs the full workflow on push/PR/manual dispatch and emits JUnit output for unit tests. A local pass is not a hosted result: record the exact published SHA and terminal workflow result. API-created commits may have different SHAs from local candidates; compare full tree identities. There is no automatic deployment/CD stage. Runtime service activation and external account/corpus tests require their own authorization and evidence.
+Rebuilding and reinstalling a **Python wheel** with `make fastplus` also needs uv on `PATH` and Maturin installed in the selected Python environment. That target builds into `/tmp/fpwheel` and reinstalls matching wheels, so use a dedicated build environment. The supported Maturin range is in the [parser build metadata](../vendor/fastplus/pyproject.toml). FASTEXPR operator counting and Python probe validation have separate tests.
 
-The November 7 release candidate passed 1624 Python tests with 16 corpus skips and 22 Rust tests before this documentation phase. Those dated results do not certify future commits. Current audit results belong in DOCS_AUDIT.md rather than an evergreen claim of complete production validation.
+Use synthetic headers and a controlled clock for quota and reset tests. Keep generated fixture timestamps inside the miner's rolling lookback window. For a release, the owner verifies the published source tree and the workflow result for its exact commit. [Release procedure](../PUBLICATION.md)

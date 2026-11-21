@@ -1,8 +1,10 @@
 # Setup
 
-## Offline development
+## Install validation dependencies
 
-Requirements: native Linux/WSL, Python 3.12, Bash, make and access to package repositories. Use a fresh environment in a new checkout:
+Work from the repository root in a clean Linux or WSL checkout. The GitHub workflow uses CPython 3.12 on Ubuntu 24.04. The Python checks require GNU Make. Full CI also needs a stable Rust toolchain with Cargo, a C linker available as `cc`, and the active Python interpreter's shared library.
+
+The [README quick start](../README.md#start-here) installs the hash-pinned validation environment with uv. On a host with Python 3.12 and its `venv` and `ensurepip` modules installed, use the equivalent pip commands below.
 
 ```bash
 python3.12 -m venv .venv
@@ -12,16 +14,34 @@ make docs-check
 make test
 ```
 
-Alternatively, `make setup-dev` uses uv to create/reuse `.venv` and install runtime/development requirements. Do not reprovision a live service environment for documentation validation. Python metadata permits >=3.12; the hosted CI validates 3.12, not every newer version. `requirements.txt` pins requests 2.34.2, py-fastplus 0.3.5 and DuckDB 1.5.6. Keep writer version compatibility in mind when upgrading existing data.
+If Python 3.12 is installed outside `PATH`, use the full path to that interpreter for the first command. A uv-created environment can omit pip. Use `uv pip check --python .venv/bin/python` in that environment. The Makefile uses `.venv/bin/python` directly, so activation is optional.
 
-`make ci` also builds/tests the vendored Rust parser: install a stable Rust toolchain and a C linker. Cargo may download dependencies. No live credentials or DB are needed. See [Development](DEVELOPMENT.md).
+### Cached installation
 
-## Runtime provisioning (separate authorization)
+With CPython 3.12 already installed and all packages from the lock in the local uv cache, this sequence keeps installation and validation offline.
 
-Runtime uses the same project Python and embedded DuckDB; no database server or Docker image is required. For runtime-only dependencies use `make setup`. Restore private credentials using [Configuration](CONFIGURATION.md); source checkout does not restore datasets, receipts, budget state or account entitlement.
+```bash
+UV_OFFLINE=1 UV_PYTHON_DOWNLOADS=never uv venv --python 3.12 .venv
+UV_OFFLINE=1 uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+uv pip check --python .venv/bin/python
+make docs-check
+make test
+```
 
-The optional user service needs systemd, `flock` from util-linux and a persistent Linux/WSL host. Inspect `tools/brain-work-explorer.service` and `tools/run_explorer_supervised.sh` first. `make install-service` renders this checkout's absolute path into the user unit and reloads the manager; it does not start or enable research. Installation is a host change and was not executed to verify these docs.
+Provision any missing locked distributions before going offline. For offline Rust tests, the crates in the vendored parser's `Cargo.lock` must also be cached. See [Development](DEVELOPMENT.md#reproduce-ci).
 
-`make start` starts the supervisor and may submit simulations/alphas. `make stop` stops its whole control group. `make status` and `make progress` inspect service/logs without opening DuckDB. Use [Operations](OPERATIONS.md) and the deployment owner's latest authorization before lifecycle actions.
+## Runtime environment
 
-Enabling the user unit or enabling user lingering is a separate decision about unattended research. WSL must remain running. Re-render the unit if the checkout moves; never point a second deployment at the same live DB. Do not reuse a venv with interpreter paths from another machine/container.
+`make setup` uses uv to create or reuse the project environment and install the runtime pins. `make setup-dev` also installs the development requirements. The release checks use the complete, hash-pinned [CI lock](../requirements-ci.txt). The runtime DuckDB pin matters when opening an existing DB and WAL. [Configuration](CONFIGURATION.md) covers private credential lookup and [Data](DATA.md) describes storage.
+
+## Optional user service
+
+The runtime service needs Bash, `flock` from util-linux and a running systemd user manager. On WSL this applies to the Linux distribution hosting the writer. Run lifecycle commands from the intended deployment checkout under the account that owns that manager. One supervisor and its maintenance tools must use the same log directory for `explorer.lock`.
+
+Preview the installation from the deployment checkout.
+
+```bash
+make -n install-service
+```
+
+`make install-service` writes the rendered unit under `~/.config/systemd/user/` and reloads the user manager. The unit records the checkout's absolute working directory and Python path. Render it again if the deployment moves. Starting the unit, enabling it for later login and configuring user lingering are separate operations. Start only in an authorized research window after reconciling pending work. [Service template](../tools/brain-work-explorer.service) · [Startup and recovery](OPERATIONS.md)

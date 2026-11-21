@@ -29,7 +29,7 @@ Source defaults are not evidence of current native limits. Inspect the existing 
 
 `make start TEMPLATE_MIX=...` passes that mix to the supervisor. The user service receives that value from the service manager at startup. Changing a shell environment does not change an already-running explorer. After changing it, a controlled restart is required.
 
-Region/universe/delay cells live in `core/regions.py`; settings constraints in `core/constraints.py` and `runner/settings_factory.py`. Query native OPTIONS/field metadata before relying on a static entry. Do not hard-code a supposedly permanent configured-cell count into guides.
+Region, universe and delay cells are defined in the region configuration. The settings factory applies the constraints package when building simulation settings. Check native OPTIONS and field metadata for current availability. [Regions](../core/regions.py) · [Constraints](../core/constraints/__init__.py) · [Settings factory](../runner/settings_factory.py)
 
 ## Credentials and network
 

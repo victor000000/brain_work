@@ -93,7 +93,7 @@ def test_the_post_is_gated_after_max_undecided_rounds(monkeypatch, conn):
     assert conn.execute("SELECT COUNT(*) FROM alpha_check_summary WHERE alpha_id='A7'").fetchone()[0] == 0
 
 
-def test_the_gate_lapses_when_the_cooldown_expires(monkeypatch, conn):
+def test_the_gate_lapses_when_the_cooldown_expires(monkeypatch, conn, allowed_alpha_session):
     """A spent count must bar a POST for a while, never for good.
 
     The gate compared the count to `MAX_SUBMIT_ROUNDS` with nothing ever
@@ -119,7 +119,7 @@ def test_the_gate_lapses_when_the_cooldown_expires(monkeypatch, conn):
     conn.execute("UPDATE check_failures SET last_seen=? WHERE alpha_id='A9' AND check_name='RETRY_ATTEMPT'", (stale,))
     conn.commit()
 
-    assert flow._do_check_and_submit(None, conn, "A9") != "CHECK_UNAVAILABLE_GIVEUP"
+    assert flow._do_check_and_submit(allowed_alpha_session, conn, "A9") != "CHECK_UNAVAILABLE_GIVEUP"
     assert posted, "the cooldown lapsed and the gate still blocked the POST"
 
 

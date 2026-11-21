@@ -12,6 +12,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from unittest.mock import Mock
 
 import duckdb
 import pytest
@@ -134,3 +135,13 @@ def prod_conn():
         pytest.skip("production database has no field data — integration test")
     yield conn
     conn.close()
+
+
+@pytest.fixture
+def allowed_alpha_session():
+    """Supply readable, in-scope alpha details to tests of later submission stages."""
+    session = Mock(spec=["get"])
+    response = session.get.return_value
+    response.status_code = 200
+    response.json.return_value = {"regular": {"code": "rank(close)"}}
+    return session

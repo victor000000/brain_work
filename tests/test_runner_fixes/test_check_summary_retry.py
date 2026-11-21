@@ -62,7 +62,9 @@ def test_quota_only_no_summary_also_removes_previous_decision(conn, quota):
 
 
 @pytest.mark.parametrize("blocked", ["pending", "quota"])
-def test_real_check_pipeline_returns_previously_checked_alpha_to_retry_queue(conn, monkeypatch, blocked):
+def test_real_check_pipeline_returns_previously_checked_alpha_to_retry_queue(
+    conn, monkeypatch, blocked, allowed_alpha_session
+):
     _previously_checked(conn)
     _seed(conn, "FRESH", 1.7)
     assert [aid for aid, _ in _select_candidates(conn, 10)] == ["FRESH"]
@@ -75,7 +77,7 @@ def test_real_check_pipeline_returns_previously_checked_alpha_to_retry_queue(con
     monkeypatch.setattr(submit_checks, "check_via_submit", lambda session, aid: (403, newest))
 
     _check_alpha(
-        None,
+        allowed_alpha_session,
         conn,
         "A1",
         2.0,

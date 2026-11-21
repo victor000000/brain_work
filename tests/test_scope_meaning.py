@@ -73,7 +73,9 @@ def test_submission_refuses_semantic_violation_before_mutation(field, monkeypatc
         conn.execute("INSERT INTO alpha_results (alpha_id,status,raw_json) VALUES ('scope-test','UNSUBMITTED','{}')")
         conn.commit()
         session = SimpleNamespace(
-            get=lambda *args, **kwargs: SimpleNamespace(json=lambda: {"regular": {"code": f"rank({field})"}})
+            get=lambda *args, **kwargs: SimpleNamespace(
+                status_code=200, json=lambda: {"regular": {"code": f"rank({field})"}}
+            )
         )
         monkeypatch.setattr(flow, "ensure_description", lambda *args: pytest.fail("scope violation reached PATCH"))
         monkeypatch.setattr(flow, "try_submit", lambda *args: pytest.fail("scope violation reached POST"))

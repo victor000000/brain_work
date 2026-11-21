@@ -1,38 +1,37 @@
 # brain_work
 
-Version 1.0.2 is a Python research engine for WorldQuant BRAIN: generate expressions, simulate, collect native results, inspect checks and verify submission outcomes. It stores research state in DuckDB and exports metadata/analysis as Parquet. Source tests do not establish profitability or Expert promotion.
+brain_work generates expressions for WorldQuant BRAIN, runs simulations, stores results in DuckDB and verifies alpha submissions. It exports metadata and analysis as Parquet. The package version and supported Python versions are in the [project metadata](pyproject.toml).
 
 ## Start here
 
-Use native Linux/WSL and Python 3.12. No Docker runtime is required. In a fresh checkout, safe offline validation is:
+Use a fresh Linux or WSL checkout, GNU Make and CPython 3.12. With uv installed, run these commands from the repository root.
 
 ```bash
-python3.12 -m venv .venv
-.venv/bin/python -m pip install --require-hashes -r requirements-ci.txt
-.venv/bin/python -m pip check
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+uv pip check --python .venv/bin/python
 make docs-check
 make test
 ```
 
-Installation downloads packages; tests disable sockets and deny production-DB access. Full `make ci` additionally requires Rust and a C linker. No credentials, running service or market dataset is needed for offline tests. See [Setup](docs/SETUP.md) for runtime provisioning and [Development](docs/DEVELOPMENT.md) for the complete CI contract.
+The first installation needs package access or a populated cache. The unit suite runs with sockets disabled and uses synthetic state. A full CI run also builds and tests the vendored Rust parser. See [Setup](docs/SETUP.md) for the pip and offline installation options and [Development](docs/DEVELOPMENT.md) for the complete CI command.
 
 | Task | Guide |
 |---|---|
 | Understand modules and evidence stages | [Architecture](ARCHITECTURE.md) |
 | Configure credentials, paths and controls | [Configuration](docs/CONFIGURATION.md) |
-| Manage a separately authorized research run | [Operations](docs/OPERATIONS.md) |
+| Inspect, pause or recover an authorized run | [Operations](docs/OPERATIONS.md) |
 | Understand data, receipts and exports | [Data](docs/DATA.md) |
 | Design PV/options experiments | [Research](docs/RESEARCH.md) |
 | Diagnose a failure | [Troubleshooting](docs/TROUBLESHOOTING.md) |
 | Choose a CLI by its side effects | [Tools](tools/README.md) |
-| Browse all guides and historical references | [Documentation index](docs/README.md) |
+| Verify and publish a source release | [Publication](PUBLICATION.md) |
+| Browse the guides and historical references | [Documentation index](docs/README.md) |
 
-## Scope and boundaries
+## Research and deployment
 
-PV/options measurement inputs are the research scope; category labels and name prefixes alone do not establish economic meaning. Legitimate grouping metadata is for partitioning. The latest retained project design adds an atom-only policy (one numeric measurement field), but the published runtime does not yet enforce that policy structurally across every path. [Research](docs/RESEARCH.md) distinguishes policy, implemented checks and remaining gaps.
+Price/volume and options measurements are the numeric research inputs. Grouping fields serve as partitions. The atom-only design calls for one numeric measurement field. The published checks cover part of that policy. See [research scope and implementation limits](docs/RESEARCH.md).
 
-One process owns the live database. Setup and service installation do not authorize simulations or submissions. Starting the explorer can generate native POSTs and launch background submission checks. Preserve uncertain request owners; observation timeouts never authorize replay.
+One supervised explorer owns the live database. Starting it can submit simulations and launch background alpha checks. Obtain the active window and pending request ownership from the deployment owner's private handoff before starting or resuming it. Keep credentials, databases, logs and native receipts in that deployment. [Operating procedures](docs/OPERATIONS.md)
 
-Live service state, account status, automations, receipt ledgers, credentials and historical datasets are not included in this publication. Consult the deployment owner's private handoff before runtime operations; no README can certify the current host state. [Publication contract](PUBLICATION.md).
-
-Provider acquisition/storage belongs to the separate data-provider project. Screener risk/execution UI and broker orders belong to their own projects. This repository's backtests and native BRAIN acceptance do not establish data-provider delivery, broker execution or portfolio performance.
+Provider acquisition and storage belong to the data-provider project. Screener risk controls and broker execution belong to their respective projects. Native acceptance, Expert promotion and portfolio performance each require their own evidence.

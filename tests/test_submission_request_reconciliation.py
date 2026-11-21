@@ -8,7 +8,7 @@ from core.db import connect, init_tables
 from storage.submission_requests import begin_request, needs_reconciliation, record_response
 
 
-def test_accepted_request_survives_reopen_and_is_never_reposted(tmp_path, monkeypatch):
+def test_accepted_request_survives_reopen_and_is_never_reposted(tmp_path, monkeypatch, allowed_alpha_session):
     from runner import verify_submit
     from runner.submit import flow
 
@@ -27,7 +27,7 @@ def test_accepted_request_survives_reopen_and_is_never_reposted(tmp_path, monkey
         return (200, None, "UNSUBMITTED") if len(gets) == 1 else (200, "2026-10-18T09:51:57Z", "ACTIVE")
 
     monkeypatch.setattr(verify_submit, "_get_alpha", observe)
-    assert flow.check_and_submit(None, conn, "A") == "PENDING"
+    assert flow.check_and_submit(allowed_alpha_session, conn, "A") == "PENDING"
     conn.close()
     conn = connect(path)
     assert needs_reconciliation(conn, "A")

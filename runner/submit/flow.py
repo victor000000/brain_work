@@ -60,10 +60,6 @@ def _do_check_and_submit(session, conn, alpha_id):
         clog.info("HELD: %s (cell %s in cooldown)", alpha_id, cell)
         return "HELD"
 
-    # Step 1: Patch description (REQUIRED by BRAIN)
-    ensure_description(session, alpha_id, conn)
-
-    # Step 2: Try submit directly — let platform decide (regular + power pool).
     # Refuse to re-POST an alpha the platform has left undecided
     # `MAX_SUBMIT_ROUNDS` times. Both undecided paths write that count — a 403
     # carrying ERROR/PENDING and a `201` that never sets `dateSubmitted` — so
@@ -79,6 +75,20 @@ def _do_check_and_submit(session, conn, alpha_id):
         _note_deferral(conn, alpha_id)
         clog.warning("%s: %d undecided submit rounds — cooling down, not re-POSTing", alpha_id, rounds)
         return "CHECK_UNAVAILABLE_GIVEUP"
+
+    # A retry after an explicit rejection is a new request. Check its
+    # expression before either remote write, just as on its first attempt.
+    verdict = _scope_verdict(session, alpha_id)
+    if verdict is None:
+        _note_deferral(conn, alpha_id)
+        clog.info("Deferring %s because its expression is unavailable for scope validation", alpha_id)
+        return "CHECK_UNAVAILABLE"
+    if reason := dispatch_block_reason(verdict):
+        clog.warning("scope-blocked %s: %s", alpha_id, reason)
+        store_checks(conn, alpha_id, [{"name": "SCOPE_COMPLIANCE", "result": "FAIL", "value": None, "limit": None}])
+        return "SCOPE_BLOCKED"
+
+    ensure_description(session, alpha_id, conn)
     if not begin_request(conn, alpha_id):
         # Another owner may have claimed it since the initial read.
         result = verify_submission(session, conn, alpha_id)
@@ -120,20 +130,15 @@ API_BASE = "https://api.worldquantbrain.com"
 
 
 def _scope_verdict(session, alpha_id):
-    """Resolve this alpha's expression and validate its numeric leaves.
-
-    Returns the `core.scope.validate_expression` verdict, or None when the
-    expression cannot be read (in which case the guard abstains rather than
-    inventing a failure).
-    """
+    """Return the expression verdict, or None when the detail needs a retry."""
     try:
         resp = session.get(f"{API_BASE}/alphas/{alpha_id}", timeout=60)
+        if resp.status_code != 200:
+            return None
         payload = resp.json()
     except Exception as e:
         clog.debug("scope guard could not read %s: %s", alpha_id, e)
         return None
-    # Type-strict: a test double or an unexpected payload must make the guard
-    # ABSTAIN, never fabricate a verdict out of a mock repr.
     if not isinstance(payload, dict):
         return None
     regular = payload.get("regular")
@@ -152,26 +157,6 @@ def check_and_submit(session, conn, alpha_id):
         # Terminal: never re-POST an already-submitted alpha.
         clog.info("check_and_submit skip: %s already SUBMITTED", alpha_id)
         return "SUBMITTED"
-
-    # Design 2026-11-05 (P0-1): semantic input validation before submission.
-    # A risk/model/partition leaf, or an unresolvable one, must never reach the
-    # POST. The refusal is recorded as a visible check row (and a summary, so
-    # the selector stops re-picking it) rather than deleting or hiding anything.
-    #
-    # An alpha already carrying a submission request is in an UNCERTAIN state:
-    # the only correct action there is reconciliation, and re-reading the
-    # expression would add a network round trip without changing the decision.
-    owned = False
-    try:
-        owned = conn.execute("SELECT COUNT(*) FROM submission_requests WHERE alpha_id=?", (alpha_id,)).fetchone()[0] > 0
-    except Exception:
-        owned = False
-    verdict = None if owned else _scope_verdict(session, alpha_id)
-    reason = dispatch_block_reason(verdict) if verdict else None
-    if reason:
-        clog.warning("scope-blocked %s: %s", alpha_id, reason)
-        store_checks(conn, alpha_id, [{"name": "SCOPE_COMPLIANCE", "result": "FAIL", "value": None, "limit": None}])
-        return "SCOPE_BLOCKED"
 
     result = _do_check_and_submit(session, conn, alpha_id)
     update_alpha_status(conn, alpha_id, result)

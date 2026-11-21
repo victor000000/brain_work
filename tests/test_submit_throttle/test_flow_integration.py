@@ -23,7 +23,7 @@ def conn():
     c.close()
 
 
-def test_throttled_alpha_recorded_in_throttle_state(monkeypatch, conn):
+def test_throttled_alpha_recorded_in_throttle_state(monkeypatch, conn, allowed_alpha_session):
     from runner.submit import flow
 
     flow._reset_throttle_state()
@@ -33,7 +33,7 @@ def test_throttled_alpha_recorded_in_throttle_state(monkeypatch, conn):
     monkeypatch.setattr(flow, "fallback_get_check", lambda *a, **k: "FAIL:other")
     monkeypatch.setattr(flow, "update_alpha_status", lambda *a, **k: None)
 
-    result = flow.check_and_submit(MagicMock(), conn, "A1")
+    result = flow.check_and_submit(allowed_alpha_session, conn, "A1")
     assert result == "THROTTLED"
     assert len(flow._throttle_events[("CHN", "TOP2000U", 0)]) == 1
 
