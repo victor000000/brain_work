@@ -42,4 +42,4 @@ Daily rotation uses UTC dates. Check current timestamps and matching batch/paren
 
 ## Scope and policy failures
 
-A `pv` prefix does not prove price/volume content. Check native field descriptions and dependencies; EPS/EBIT/EBT/assets tokens are blocked by 1.0.1 meaning-first screening. The helper still cannot prove arbitrary provider semantics, partition use or atom compliance. Treat missing expression metadata as an implementation limitation requiring review, not proof of scope validity.
+Inspect the original expression, field descriptions and dependencies when judging scope. The semantic checker blocks recognized EPS, EBIT, EBT and assets tokens even under a PV prefix. Confirm unresolved fields, partition use and atom compliance against the underlying metadata. [Scope implementation](../core/scope.py)

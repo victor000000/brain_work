@@ -4,7 +4,7 @@ brain_work generates expressions for WorldQuant BRAIN, runs simulations, stores 
 
 ## Start here
 
-Use a fresh Linux or WSL checkout, GNU Make and CPython 3.12. With uv installed, run these commands from the repository root.
+Use a fresh checkout of the published repository on Linux or WSL, with GNU Make and CPython 3.12. With uv installed, run these commands from the repository root.
 
 ```bash
 uv venv --python 3.12 .venv

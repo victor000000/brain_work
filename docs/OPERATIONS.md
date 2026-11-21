@@ -24,7 +24,7 @@ For a concurrent-slot refusal, let the existing runner observe its accepted pare
 
 1. Pause new experiments and campaign automation. Record known pending parent handles, probe owners, submission requests and the last observations privately.
 2. For an authorized stop, run `make stop`. The unit's `KillMode=control-group` covers the supervisor and its children. Check the user unit's state and that the writer has exited before opening the DB from another process. Consult the supervisor log if a child appears to respawn.
-3. Keep the database and any adjacent WAL together in place. Preserve the existing private logs, ledgers, plan hashes, receipts and Parquet exports. Remote jobs may finish while local polling is stopped.
+3. Keep the database and any adjacent WAL together in place. Changes to blacklists, subscriptions and quota state belong to separate maintenance work. Preserve the existing private logs, ledgers, plan hashes, receipts and Parquet exports. Remote jobs may finish while local polling is stopped.
 4. On the next authorized start the explorer opens DuckDB and executes `CHECKPOINT` before schema initialization. If recovery reports corruption, retain the DB/WAL pair and the error for the deployment owner. Repeating startup or deleting a WAL can lose the evidence needed for recovery. [Startup code](../simulate_alphas.py) · [Troubleshooting](TROUBLESHOOTING.md)
 
 ## Recover an interrupted run
@@ -38,7 +38,7 @@ Check the stored owner and the last confirmed event before choosing an action.
 | A simulation submission may have reached the provider, but its receipt is missing or conflicts with the stored payload | Preserve the claim and escalate it for reconciliation. Leave new dispatch for that owner on hold. |
 | An alpha submission is `PENDING` or `VERIFIED` in the request journal | Follow the existing request through the verification path. It observes native alpha or submission progress. A visible `dateSubmitted` confirms acceptance. A timeout or an expired progress endpoint leaves the outcome uncertain. |
 
-The general explorer can generate fresh work and start background submission checks. If the pause exceeded six hours, the scan hit its 64-parent cap, or an expected owner is missing, reconcile the outstanding handles before enabling fresh dispatch. A status-reconciliation script for eligible alphas also opens the DB, authenticates and writes local status. Inspect its source when choosing a maintenance action. [Parent recovery](../runner/explore_loop/reattach.py) · [Submission verification](../runner/verify_submit.py) · [Alpha status reconciliation](../tools/reconcile_submissions.py)
+The general explorer can generate fresh work and start background submission checks. If the pause exceeded six hours, the scan hit its 64-parent cap, or an expected owner is missing, reconcile the outstanding handles before enabling fresh dispatch. The status-reconciliation script for eligible alphas opens the DB, authenticates and writes local status. Once outstanding owners are accounted for and the window permits new submissions, `make start` starts the supervisor. Verify the unit is active and compare the reattachment messages in the explorer log with the private list. [Parent recovery](../runner/explore_loop/reattach.py) · [Submission verification](../runner/verify_submit.py) · [Alpha status reconciliation](../tools/reconcile_submissions.py)
 
 ## Validate a new alpha submission
 

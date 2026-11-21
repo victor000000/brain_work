@@ -8,19 +8,28 @@ Use the existing release branch and agree on one publisher. Contributors give th
 
 Keep credentials, live databases and WALs, logs, receipts, account or API captures, email/forum archives, private research, caches, binary distributions and local test reports outside the commit. Stage the intended source, tests and public guides by path. Inspect `git status --short`, `git diff --cached --name-status`, `git diff --cached --check` and the staged diff itself before committing. The ignore file helps with untracked files. Review the contents of modified tracked files too.
 
-After committing, run the following from the isolated checkout. Record the candidate commit and tree in the same shell used for verification.
+After committing, identify the candidate and the current destination. Keep these variables in the same shell through verification.
 
 ```bash
 git fetch origin main
-git merge-base --is-ancestor FETCH_HEAD HEAD
-git diff --name-status FETCH_HEAD..HEAD
-git diff --check FETCH_HEAD..HEAD
-git status --short
 candidate=$(git rev-parse HEAD)
-candidate_tree=$(git rev-parse 'HEAD^{tree}')
+candidate_tree=$(git rev-parse "${candidate}^{tree}")
+remote_main=$(git rev-parse FETCH_HEAD)
+remote_tree=$(git rev-parse "${remote_main}^{tree}")
+git status --short
 ```
 
-The ancestry check must succeed and the working tree used for validation should be clean. If main has advanced on a different line, integrate its changes in the release checkout and verify the resulting commit. Run the complete gate and the optimized parser build from [Development](docs/DEVELOPMENT.md#reproduce-ci). Keep the results with the candidate SHA locally.
+If `test "$remote_tree" = "$candidate_tree"` succeeds, the source is already on main, even when GitHub gave the commit a different SHA. Use `remote_main` for hosted verification. If main advanced after an earlier push, use the branch history or the merged pull request to locate the integrated commit and its workflow. Reuse that publication.
+
+For an unpublished candidate, check that the fetched main is its ancestor and review the committed delta.
+
+```bash
+git merge-base --is-ancestor "$remote_main" "$candidate"
+git diff --name-status "$remote_main" "$candidate"
+git diff --check "$remote_main" "$candidate"
+```
+
+Continue with a clean working tree and a successful ancestry check. If main has advanced on a different line, integrate its changes and verify the resulting candidate. Run the complete gate and the optimized parser build from [Development](docs/DEVELOPMENT.md#reproduce-ci). Keep the results with the candidate SHA locally.
 
 ## Publish once and verify GitHub
 

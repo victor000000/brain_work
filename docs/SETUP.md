@@ -4,7 +4,9 @@
 
 Work from the repository root in a clean Linux or WSL checkout. The GitHub workflow uses CPython 3.12 on Ubuntu 24.04. The Python checks require GNU Make. Full CI also needs a stable Rust toolchain with Cargo, a C linker available as `cc`, and the active Python interpreter's shared library.
 
-The [README quick start](../README.md#start-here) installs the hash-pinned validation environment with uv. On a host with Python 3.12 and its `venv` and `ensurepip` modules installed, use the equivalent pip commands below.
+The README quick start installs the hash-pinned environment with uv. [Quick start](../README.md#start-here)
+
+On a host with Python 3.12 and its `venv` and `ensurepip` modules installed, use the equivalent pip commands below.
 
 ```bash
 python3.12 -m venv .venv
